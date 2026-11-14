@@ -4,7 +4,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import com.example.data.Quadrant
 import com.example.data.TaskEntity
 import com.example.ui.DailyEvaluationSummary
+import com.example.ui.theme.LocalIsDarkTheme
 
 @Composable
 fun DailyEvaluationCard(
@@ -45,7 +45,7 @@ fun DailyEvaluationCard(
     focusSessionsToday: Int,
     modifier: Modifier = Modifier
 ) {
-    val darkTheme = isSystemInDarkTheme()
+    val darkTheme = LocalIsDarkTheme.current
     val animatedProgress by animateFloatAsState(
         targetValue = evaluation.progressFraction.coerceIn(0f, 1f),
         animationSpec = tween(durationMillis = 500),

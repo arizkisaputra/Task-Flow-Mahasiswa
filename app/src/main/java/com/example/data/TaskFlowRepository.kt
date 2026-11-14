@@ -12,6 +12,7 @@ class TaskFlowRepository(
     val allTimeBlocks: Flow<List<TimeBlockEntity>> = timeBlockDao.observeAllBlocks()
     val soundEnabled: Flow<Boolean> = preferencesManager.soundEnabled
     val hasRequestedNotifications: Flow<Boolean> = preferencesManager.hasRequestedNotifications
+    val themeMode: Flow<ThemeMode> = preferencesManager.themeMode
     val focusSessionsToday: Flow<Int> = preferencesManager.focusSessionsToday
 
     suspend fun ensureInitialDataSeeded() {
@@ -234,5 +235,9 @@ class TaskFlowRepository(
 
     suspend fun addNotifiedReminderKey(key: String) {
         preferencesManager.addNotifiedReminderKey(key)
+    }
+
+    suspend fun setThemeMode(mode: ThemeMode) {
+        preferencesManager.setThemeMode(mode)
     }
 }

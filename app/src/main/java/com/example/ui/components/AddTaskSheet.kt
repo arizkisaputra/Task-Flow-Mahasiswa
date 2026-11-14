@@ -3,7 +3,6 @@ package com.example.ui.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,6 +53,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.data.Quadrant
+import com.example.ui.theme.LocalIsDarkTheme
 import com.example.util.DateTimeFormatters
 import java.util.Calendar
 import java.util.TimeZone
@@ -71,7 +71,7 @@ fun AddTaskSheet(
     ) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val darkTheme = isSystemInDarkTheme()
+    val darkTheme = LocalIsDarkTheme.current
 
     var title by remember { mutableStateOf("") }
     var course by remember { mutableStateOf("") }

@@ -3,7 +3,6 @@ package com.example.ui.screens
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -60,6 +59,7 @@ import com.example.data.TaskEntity
 import com.example.data.TimeBlockEntity
 import com.example.ui.TaskFlowUiState
 import com.example.ui.theme.JetBrainsMonoFamily
+import com.example.ui.theme.LocalIsDarkTheme
 
 private data class DayPeriodGroup(
     val title: String,
@@ -159,7 +159,7 @@ private fun TimeBlockSlotRow(
     onToggleCompleted: () -> Unit,
     onClear: () -> Unit
 ) {
-    val darkTheme = isSystemInDarkTheme()
+    val darkTheme = LocalIsDarkTheme.current
     val timeLabel = String.format("%02d:00", hourStart)
     val qColors = block?.quadrant?.colors(darkTheme)
 
@@ -303,7 +303,7 @@ fun EditTimeBlockSheet(
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val darkTheme = isSystemInDarkTheme()
+    val darkTheme = LocalIsDarkTheme.current
     var customTitle by remember(hourStart) { mutableStateOf(existingBlock?.title ?: "") }
     var customNote by remember(hourStart) { mutableStateOf(existingBlock?.subtitle ?: "") }
 

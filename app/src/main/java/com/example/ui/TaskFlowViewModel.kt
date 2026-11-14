@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.data.Quadrant
 import com.example.data.TaskEntity
 import com.example.data.TaskFlowRepository
+import com.example.data.ThemeMode
 import com.example.data.TimeBlockEntity
 import com.example.util.DateTimeFormatters
 import com.example.util.DeadlineScheduler
@@ -88,9 +89,11 @@ data class TaskFlowUiState(
     val pomodoro: PomodoroState = PomodoroState(),
     val showAddTaskSheet: Boolean = false,
     val showPrototypeInfoSheet: Boolean = false,
+    val showSettingsSheet: Boolean = false,
     val scheduleTargetTask: TaskEntity? = null,
     val editingHourSlot: Int? = null,
-    val hasRequestedNotifications: Boolean? = null
+    val hasRequestedNotifications: Boolean? = null,
+    val themeMode: ThemeMode = ThemeMode.SYSTEM
 )
 
 sealed interface UiEvent {
@@ -118,50 +121,61 @@ class TaskFlowViewModel(
         }
 
         viewModelScope.launch {
-            combine(
-                repository.allTasks,
-                repository.allTimeBlocks,
+            val dataFlow = combine(repository.allTasks, repository.allTimeBlocks) { tasks, blocks ->
+                tasks to blocks
+            }
+            val prefsFlow = combine(
                 repository.focusSessionsToday,
                 repository.soundEnabled,
-                repository.hasRequestedNotifications
-            ) { tasks, blocks, sessionsToday, soundEnabled, hasRequestedNotif ->
-                QuintupleData(tasks, blocks, sessionsToday, soundEnabled, hasRequestedNotif)
-            }.collect { data ->
+                repository.hasRequestedNotifications,
+                repository.themeMode
+            ) { sessionsToday, soundEnabled, hasRequestedNotif, themeMode ->
+                PrefsSnapshot(sessionsToday, soundEnabled, hasRequestedNotif, themeMode)
+            }
+
+            combine(dataFlow, prefsFlow) { (tasks, blocks), prefs ->
+                CombinedSnapshot(tasks, blocks, prefs)
+            }.collect { snapshot ->
+                val tasks = snapshot.tasks
+                val blocks = snapshot.blocks
+                val prefs = snapshot.prefs
+
                 _uiState.update { current ->
                     val filtered = when (current.taskFilter) {
-                        TaskFilter.ALL -> data.tasks
-                        TaskFilter.ACTIVE -> data.tasks.filter { !it.isCompleted }
-                        TaskFilter.COMPLETED -> data.tasks.filter { it.isCompleted }
+                        TaskFilter.ALL -> tasks
+                        TaskFilter.ACTIVE -> tasks.filter { !it.isCompleted }
+                        TaskFilter.COMPLETED -> tasks.filter { it.isCompleted }
                     }
                     val grouped = Quadrant.entries.associateWith { quadrant ->
                         filtered.filter { it.quadrant == quadrant }
                     }
-                    val evaluation = buildEvaluationSummary(data.tasks)
-                    val selectedTaskStillExists = data.tasks.any { it.id == current.pomodoro.selectedTaskId }
+                    val evaluation = buildEvaluationSummary(tasks)
+                    val selectedTaskStillExists = tasks.any { it.id == current.pomodoro.selectedTaskId }
                     val fallbackTaskId = if (selectedTaskStillExists) {
                         current.pomodoro.selectedTaskId
                     } else {
-                        data.tasks.firstOrNull { !it.isCompleted && it.quadrant == Quadrant.Q1_DO_FIRST }?.id
-                            ?: data.tasks.firstOrNull { !it.isCompleted }?.id
+                        tasks.firstOrNull { !it.isCompleted && it.quadrant == Quadrant.Q1_DO_FIRST }?.id
+                            ?: tasks.firstOrNull { !it.isCompleted }?.id
                     }
 
                     current.copy(
-                        allTasks = data.tasks,
+                        allTasks = tasks,
                         tasksByQuadrant = grouped,
-                        timeBlocksByHour = data.blocks.associateBy { it.hourStart },
+                        timeBlocksByHour = blocks.associateBy { it.hourStart },
                         evaluation = evaluation,
-                        hasRequestedNotifications = data.hasRequestedNotifications,
+                        hasRequestedNotifications = prefs.hasRequestedNotifications,
+                        themeMode = prefs.themeMode,
                         pomodoro = current.pomodoro.copy(
                             selectedTaskId = fallbackTaskId,
-                            focusSessionsToday = data.sessionsToday,
-                            soundEnabled = data.soundEnabled
+                            focusSessionsToday = prefs.sessionsToday,
+                            soundEnabled = prefs.soundEnabled
                         )
                     )
                 }
-                val blocksMap = data.blocks.associateBy { it.hourStart }
-                DeadlineScheduler.syncTaskDeadlineAlarms(appContext, data.tasks)
+                val blocksMap = blocks.associateBy { it.hourStart }
+                DeadlineScheduler.syncTaskDeadlineAlarms(appContext, tasks)
                 DeadlineScheduler.syncScheduleAlarms(appContext, blocksMap)
-                checkAndPushImminentDeadlines(data.tasks, data.blocks)
+                checkAndPushImminentDeadlines(tasks, blocks)
             }
         }
 
@@ -612,6 +626,16 @@ class TaskFlowViewModel(
         }
     }
 
+    fun openSettingsSheet(open: Boolean) {
+        _uiState.update { it.copy(showSettingsSheet = open) }
+    }
+
+    fun setThemeMode(mode: ThemeMode) {
+        viewModelScope.launch {
+            repository.setThemeMode(mode)
+        }
+    }
+
     fun resetDemoData() {
         viewModelScope.launch {
             repository.resetDemoData()
@@ -626,12 +650,17 @@ class TaskFlowViewModel(
         super.onCleared()
     }
 
-    private data class QuintupleData(
-        val tasks: List<TaskEntity>,
-        val blocks: List<TimeBlockEntity>,
+    private data class PrefsSnapshot(
         val sessionsToday: Int,
         val soundEnabled: Boolean,
-        val hasRequestedNotifications: Boolean
+        val hasRequestedNotifications: Boolean,
+        val themeMode: ThemeMode
+    )
+
+    private data class CombinedSnapshot(
+        val tasks: List<TaskEntity>,
+        val blocks: List<TimeBlockEntity>,
+        val prefs: PrefsSnapshot
     )
 
     class Factory(

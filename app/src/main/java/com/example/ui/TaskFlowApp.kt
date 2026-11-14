@@ -27,6 +27,7 @@ import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.NotificationsOff
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CalendarMonth
@@ -76,6 +77,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ui.components.AddTaskSheet
 import com.example.ui.components.PrototypeInfoSheet
+import com.example.ui.components.SettingsSheet
 import com.example.ui.screens.EditTimeBlockSheet
 import com.example.ui.screens.MatrixScreen
 import com.example.ui.screens.PomodoroScreen
@@ -283,6 +285,16 @@ fun TaskFlowApp(viewModel: TaskFlowViewModel) {
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
+                        IconButton(
+                            onClick = { viewModel.openSettingsSheet(true) },
+                            modifier = Modifier.testTag("top_bar_settings_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Settings,
+                                contentDescription = "Pengaturan Tema Light & Dark Mode",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.background
@@ -460,6 +472,21 @@ fun TaskFlowApp(viewModel: TaskFlowViewModel) {
         PrototypeInfoSheet(
             onDismiss = { viewModel.openPrototypeInfoSheet(false) },
             onResetDemoData = viewModel::resetDemoData
+        )
+    }
+
+    if (uiState.showSettingsSheet) {
+        SettingsSheet(
+            currentThemeMode = uiState.themeMode,
+            soundEnabled = uiState.pomodoro.soundEnabled,
+            notificationsEnabled = notificationsEnabled,
+            onSelectThemeMode = viewModel::setThemeMode,
+            onToggleSound = viewModel::toggleSoundEnabled,
+            onRequestNotifications = {
+                viewModel.openSettingsSheet(false)
+                showNotificationDialog = true
+            },
+            onDismiss = { viewModel.openSettingsSheet(false) }
         )
     }
 

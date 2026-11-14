@@ -4,7 +4,6 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,6 +52,7 @@ import com.example.ui.TaskFilter
 import com.example.ui.TaskFlowUiState
 import com.example.ui.components.DailyEvaluationCard
 import com.example.ui.components.MotivationHeaderCard
+import com.example.ui.theme.LocalIsDarkTheme
 import com.example.util.DateTimeFormatters
 
 @Composable
@@ -234,7 +234,7 @@ private fun QuadrantCard(
     onDeleteTask: (TaskEntity) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val darkTheme = isSystemInDarkTheme()
+    val darkTheme = LocalIsDarkTheme.current
     val colors = quadrant.colors(darkTheme)
 
     Surface(

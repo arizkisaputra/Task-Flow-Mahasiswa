@@ -27,6 +27,7 @@ class PreferencesManager(private val context: Context) {
         val SOUND_ENABLED = booleanPreferencesKey("sound_enabled")
         val HAS_REQUESTED_NOTIFICATIONS = booleanPreferencesKey("has_requested_notifications")
         val NOTIFIED_REMINDER_KEYS = stringSetPreferencesKey("notified_reminder_keys")
+        val THEME_MODE = stringPreferencesKey("theme_mode")
     }
 
     private fun todayKey(): String =
@@ -38,6 +39,10 @@ class PreferencesManager(private val context: Context) {
 
     val hasRequestedNotifications: Flow<Boolean> = context.dataStore.data.map { prefs ->
         prefs[Keys.HAS_REQUESTED_NOTIFICATIONS] ?: false
+    }
+
+    val themeMode: Flow<ThemeMode> = context.dataStore.data.map { prefs ->
+        ThemeMode.fromStorage(prefs[Keys.THEME_MODE])
     }
 
     val focusSessionsToday: Flow<Int> = context.dataStore.data.map { prefs ->
@@ -89,6 +94,12 @@ class PreferencesManager(private val context: Context) {
             val current = prefs[Keys.NOTIFIED_REMINDER_KEYS] ?: emptySet()
             val trimmed = if (current.size >= 100) current.toList().takeLast(60).toSet() else current
             prefs[Keys.NOTIFIED_REMINDER_KEYS] = trimmed + key
+        }
+    }
+
+    suspend fun setThemeMode(mode: ThemeMode) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.THEME_MODE] = mode.name
         }
     }
 }

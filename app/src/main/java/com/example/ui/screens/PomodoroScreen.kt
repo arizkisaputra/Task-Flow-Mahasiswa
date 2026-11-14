@@ -6,7 +6,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -64,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import com.example.data.TaskEntity
 import com.example.ui.PomodoroMode
 import com.example.ui.TaskFlowUiState
+import com.example.ui.theme.LocalIsDarkTheme
 import com.example.util.DateTimeFormatters
 
 @Composable
@@ -83,7 +83,7 @@ fun PomodoroScreen(
     val selectedTask = uiState.allTasks.firstOrNull { it.id == pomodoro.selectedTaskId }
     var showTaskSelector by remember { mutableStateOf(false) }
 
-    val darkTheme = isSystemInDarkTheme()
+    val darkTheme = LocalIsDarkTheme.current
     val ringColor = if (pomodoro.mode == PomodoroMode.FOCUS) {
         MaterialTheme.colorScheme.primary
     } else {
@@ -514,7 +514,7 @@ private fun TaskPickerSheet(
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val darkTheme = isSystemInDarkTheme()
+    val darkTheme = LocalIsDarkTheme.current
     val sortedTasks = remember(tasks) {
         tasks.sortedWith(compareBy<TaskEntity> { it.isCompleted }.thenBy { it.quadrant.ordinal })
     }
