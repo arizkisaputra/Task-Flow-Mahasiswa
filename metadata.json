@@ -1,0 +1,6 @@
+{
+  "name": "TaskFlow Mahasiswa",
+  "description": "Aplikasi manajemen waktu dan skala prioritas tugas mahasiswa berbasis Matriks Eisenhower, Time-Blocking, Pomodoro, dan nilai disiplin QS. Al-'Asr.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
