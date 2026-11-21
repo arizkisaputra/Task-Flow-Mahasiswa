@@ -1,6 +1,7 @@
 package com.example.data
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import java.util.Calendar
 
 class TaskFlowRepository(
@@ -8,12 +9,9 @@ class TaskFlowRepository(
     private val timeBlockDao: TimeBlockDao,
     private val preferencesManager: PreferencesManager
 ) {
-    val allTasks: Flow<List<TaskEntity>> = taskDao.observeAllTasks()
-    val allTimeBlocks: Flow<List<TimeBlockEntity>> = timeBlockDao.observeAllBlocks()
-    val soundEnabled: Flow<Boolean> = preferencesManager.soundEnabled
-    val hasRequestedNotifications: Flow<Boolean> = preferencesManager.hasRequestedNotifications
-    val themeMode: Flow<ThemeMode> = preferencesManager.themeMode
-    val focusSessionsToday: Flow<Int> = preferencesManager.focusSessionsToday
+    val allTasks: Flow<List<TaskEntity>> = taskDao.observeAllTasks().distinctUntilChanged()
+    val allTimeBlocks: Flow<List<TimeBlockEntity>> = timeBlockDao.observeAllBlocks().distinctUntilChanged()
+    val prefsSnapshot: Flow<PrefsSnapshot> = preferencesManager.prefsSnapshot
 
     suspend fun ensureInitialDataSeeded() {
         if (!preferencesManager.isSeeded() && taskDao.countTasks() == 0) {

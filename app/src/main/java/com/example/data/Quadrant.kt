@@ -1,5 +1,6 @@
 package com.example.data
 
+import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import com.example.ui.theme.Q1AccentDark
 import com.example.ui.theme.Q1AccentLight
@@ -71,28 +72,25 @@ enum class Quadrant(
         description = "Kendalikan durasinya agar waktu tetap bernilai dan terhindar dari penundaan."
     );
 
-    fun colors(darkTheme: Boolean): QuadrantColors = when (this) {
-        Q1_DO_FIRST -> if (darkTheme) {
-            QuadrantColors(Q1Dot, Q1AccentDark, Q1ContainerDark, Q1BorderDark)
-        } else {
-            QuadrantColors(Q1Dot, Q1AccentLight, Q1ContainerLight, Q1BorderLight)
-        }
-        Q2_SCHEDULE -> if (darkTheme) {
-            QuadrantColors(Q2Dot, Q2AccentDark, Q2ContainerDark, Q2BorderDark)
-        } else {
-            QuadrantColors(Q2Dot, Q2AccentLight, Q2ContainerLight, Q2BorderLight)
-        }
-        Q3_DELEGATE -> if (darkTheme) {
-            QuadrantColors(Q3Dot, Q3AccentDark, Q3ContainerDark, Q3BorderDark)
-        } else {
-            QuadrantColors(Q3Dot, Q3AccentLight, Q3ContainerLight, Q3BorderLight)
-        }
-        Q4_ELIMINATE -> if (darkTheme) {
-            QuadrantColors(Q4Dot, Q4AccentDark, Q4ContainerDark, Q4BorderDark)
-        } else {
-            QuadrantColors(Q4Dot, Q4AccentLight, Q4ContainerLight, Q4BorderLight)
+    private val darkColors: QuadrantColors by lazy(LazyThreadSafetyMode.NONE) {
+        when (this) {
+            Q1_DO_FIRST -> QuadrantColors(Q1Dot, Q1AccentDark, Q1ContainerDark, Q1BorderDark)
+            Q2_SCHEDULE -> QuadrantColors(Q2Dot, Q2AccentDark, Q2ContainerDark, Q2BorderDark)
+            Q3_DELEGATE -> QuadrantColors(Q3Dot, Q3AccentDark, Q3ContainerDark, Q3BorderDark)
+            Q4_ELIMINATE -> QuadrantColors(Q4Dot, Q4AccentDark, Q4ContainerDark, Q4BorderDark)
         }
     }
+
+    private val lightColors: QuadrantColors by lazy(LazyThreadSafetyMode.NONE) {
+        when (this) {
+            Q1_DO_FIRST -> QuadrantColors(Q1Dot, Q1AccentLight, Q1ContainerLight, Q1BorderLight)
+            Q2_SCHEDULE -> QuadrantColors(Q2Dot, Q2AccentLight, Q2ContainerLight, Q2BorderLight)
+            Q3_DELEGATE -> QuadrantColors(Q3Dot, Q3AccentLight, Q3ContainerLight, Q3BorderLight)
+            Q4_ELIMINATE -> QuadrantColors(Q4Dot, Q4AccentLight, Q4ContainerLight, Q4BorderLight)
+        }
+    }
+
+    fun colors(darkTheme: Boolean): QuadrantColors = if (darkTheme) darkColors else lightColors
 
     companion object {
         fun fromImportanceAndUrgency(isImportant: Boolean, isUrgent: Boolean): Quadrant = when {
@@ -104,6 +102,7 @@ enum class Quadrant(
     }
 }
 
+@Immutable
 data class QuadrantColors(
     val dot: Color,
     val accent: Color,

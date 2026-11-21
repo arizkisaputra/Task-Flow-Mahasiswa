@@ -36,9 +36,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
             val systemDark = isSystemInDarkTheme()
-            val isDarkTheme = when (uiState.themeMode) {
+            val isDarkTheme = when (themeMode) {
                 ThemeMode.LIGHT -> false
                 ThemeMode.DARK -> true
                 ThemeMode.SYSTEM -> systemDark

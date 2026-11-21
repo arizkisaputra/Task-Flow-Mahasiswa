@@ -29,11 +29,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -109,10 +110,13 @@ fun MotivationHeaderCard(
     val coroutineScope = rememberCoroutineScope()
     val current = reflections[pagerState.currentPage]
 
-    val gradientColors = if (isDark) {
-        listOf(ReflectionGradStartDark, ReflectionGradMidDark, ReflectionGradEndDark)
-    } else {
-        listOf(ReflectionGradStartLight, ReflectionGradMidLight, ReflectionGradEndLight)
+    val bgBrush = remember(isDark) {
+        val gradientColors = if (isDark) {
+            listOf(ReflectionGradStartDark, ReflectionGradMidDark, ReflectionGradEndDark)
+        } else {
+            listOf(ReflectionGradStartLight, ReflectionGradMidLight, ReflectionGradEndLight)
+        }
+        Brush.linearGradient(gradientColors)
     }
 
     val borderColor = if (isDark) {
@@ -138,17 +142,22 @@ fun MotivationHeaderCard(
     ) {
         Column(
             modifier = Modifier
-                .background(Brush.linearGradient(gradientColors))
-                .drawBehind {
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            colors = listOf(glowColor, Color.Transparent),
-                            center = Offset(size.width * 0.92f, size.height * 0.08f),
-                            radius = size.width * 0.45f
-                        ),
-                        radius = size.width * 0.45f,
-                        center = Offset(size.width * 0.92f, size.height * 0.08f)
+                .background(bgBrush)
+                .drawWithCache {
+                    val center = Offset(size.width * 0.92f, size.height * 0.08f)
+                    val radius = size.width * 0.45f
+                    val glowBrush = Brush.radialGradient(
+                        colors = listOf(glowColor, Color.Transparent),
+                        center = center,
+                        radius = radius
                     )
+                    onDrawBehind {
+                        drawCircle(
+                            brush = glowBrush,
+                            radius = radius,
+                            center = center
+                        )
+                    }
                 }
                 .padding(top = 18.dp, bottom = 10.dp)
                 .animateContentSize(),

@@ -83,6 +83,12 @@ private val quickCourseSuggestions = listOf(
     "Pengembangan Diri" to "Pengembangan Diri"
 )
 
+private val quickDeadlineOffsets = listOf(
+    "Hari Ini" to 0,
+    "Besok" to 1,
+    "+3 Hari" to 3
+)
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddTaskSheet(
@@ -115,6 +121,9 @@ fun AddTaskSheet(
     var deadlineMillis by remember { mutableLongStateOf(defaultDeadline) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
+
+    val formattedDate = remember(deadlineMillis) { DateTimeFormatters.formatFullDate(deadlineMillis) }
+    val formattedTime = remember(deadlineMillis) { DateTimeFormatters.formatTime(deadlineMillis) }
 
     val predictedQuadrant = Quadrant.fromImportanceAndUrgency(isImportant, isUrgent)
     val qColors = predictedQuadrant.colors(isDark)
@@ -242,7 +251,7 @@ fun AddTaskSheet(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                listOf("Hari Ini" to 0, "Besok" to 1, "+3 Hari" to 3).forEach { (label, daysOffset) ->
+                quickDeadlineOffsets.forEach { (label, daysOffset) ->
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = if (isDark) Obsidian850 else Slate100,
@@ -303,7 +312,7 @@ fun AddTaskSheet(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = DateTimeFormatters.formatFullDate(deadlineMillis),
+                            text = formattedDate,
                             fontFamily = JetBrainsMonoFamily,
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurface,
@@ -333,7 +342,7 @@ fun AddTaskSheet(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = DateTimeFormatters.formatTime(deadlineMillis),
+                            text = formattedTime,
                             fontFamily = JetBrainsMonoFamily,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,

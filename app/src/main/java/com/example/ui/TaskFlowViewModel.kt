@@ -1,9 +1,11 @@
 package com.example.ui
 
 import android.content.Context
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.data.PrefsSnapshot
 import com.example.data.Quadrant
 import com.example.data.TaskEntity
 import com.example.data.TaskFlowRepository
@@ -13,6 +15,7 @@ import com.example.util.DateTimeFormatters
 import com.example.util.DeadlineScheduler
 import com.example.util.GentleChimePlayer
 import com.example.util.NotificationHelper
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -22,12 +25,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
+import kotlinx.coroutines.withContext
 import java.util.Calendar
-import java.util.Date
-import java.util.Locale
+import java.util.EnumMap
 
 enum class MainTab(val label: String) {
     MATRIX("Matriks"),
@@ -46,45 +51,42 @@ enum class PomodoroMode(val label: String, val defaultMinutes: Int) {
     BREAK("Istirahat", 5)
 }
 
+@Immutable
+data class QuadrantProgress(
+    val done: Int = 0,
+    val total: Int = 0
+)
+
+@Immutable
 data class DailyEvaluationSummary(
     val totalTasks: Int = 0,
     val completedTasks: Int = 0,
     val progressFraction: Float = 0f,
     val percentage: Int = 0,
-    val encouragementMessage: String = "Mari mulai satu langkah kecil dengan tenang."
+    val encouragementMessage: String = "Mari mulai satu langkah kecil dengan tenang.",
+    val quadrantProgress: Map<Quadrant, QuadrantProgress> = emptyMap()
 )
 
+@Immutable
 data class PomodoroState(
     val mode: PomodoroMode = PomodoroMode.FOCUS,
     val focusDurationMinutes: Int = 25,
     val breakDurationMinutes: Int = 5,
     val totalSeconds: Int = 25 * 60,
-    val remainingSeconds: Int = 25 * 60,
     val isRunning: Boolean = false,
     val selectedTaskId: Long? = null,
     val focusSessionsToday: Int = 0,
     val soundEnabled: Boolean = true,
     val completionModalMode: PomodoroMode? = null
-) {
-    val progressFraction: Float
-        get() = if (totalSeconds > 0) {
-            1f - (remainingSeconds.toFloat() / totalSeconds.toFloat())
-        } else 0f
+)
 
-    val formattedTime: String
-        get() {
-            val mins = remainingSeconds / 60
-            val secs = remainingSeconds % 60
-            return String.format("%02d:%02d", mins, secs)
-        }
-}
-
+@Immutable
 data class TaskFlowUiState(
     val currentTab: MainTab = MainTab.MATRIX,
     val taskFilter: TaskFilter = TaskFilter.ALL,
     val selectedQuadrantFilter: Quadrant? = null,
     val allTasks: List<TaskEntity> = emptyList(),
-    val tasksByQuadrant: Map<Quadrant, List<TaskEntity>> = Quadrant.entries.associateWith { emptyList() },
+    val tasksByQuadrant: Map<Quadrant, List<TaskEntity>> = emptyMap(),
     val timeBlocksByHour: Map<Int, TimeBlockEntity> = emptyMap(),
     val evaluation: DailyEvaluationSummary = DailyEvaluationSummary(),
     val pomodoro: PomodoroState = PomodoroState(),
@@ -110,152 +112,232 @@ class TaskFlowViewModel(
     private val _uiState = MutableStateFlow(TaskFlowUiState())
     val uiState: StateFlow<TaskFlowUiState> = _uiState.asStateFlow()
 
+    private val _remainingSeconds = MutableStateFlow(25 * 60)
+    val remainingSeconds: StateFlow<Int> = _remainingSeconds.asStateFlow()
+
+    private val _themeMode = MutableStateFlow(ThemeMode.DARK)
+    val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
+
     private val _events = MutableSharedFlow<UiEvent>()
     val events: SharedFlow<UiEvent> = _events.asSharedFlow()
 
     private var timerJob: Job? = null
     private var alarmTimeoutJob: Job? = null
 
+    @Volatile
+    private var cachedNotifiedKeys: MutableSet<String>? = null
+
     init {
         viewModelScope.launch {
             repository.ensureInitialDataSeeded()
         }
 
+        // UI state pipeline: compute groupings & evaluation off the main thread
         viewModelScope.launch {
-            val dataFlow = combine(repository.allTasks, repository.allTimeBlocks) { tasks, blocks ->
-                tasks to blocks
+            combine(
+                repository.allTasks,
+                repository.allTimeBlocks,
+                repository.prefsSnapshot,
+                _uiState.map { it.taskFilter }.distinctUntilChanged()
+            ) { tasks, blocks, prefs, filter ->
+                buildUiPayload(tasks, blocks, prefs, filter)
             }
-            val prefsFlow = combine(
-                repository.focusSessionsToday,
-                repository.soundEnabled,
-                repository.hasRequestedNotifications,
-                repository.themeMode
-            ) { sessionsToday, soundEnabled, hasRequestedNotif, themeMode ->
-                PrefsSnapshot(sessionsToday, soundEnabled, hasRequestedNotif, themeMode)
-            }
-
-            combine(dataFlow, prefsFlow) { (tasks, blocks), prefs ->
-                CombinedSnapshot(tasks, blocks, prefs)
-            }.collect { snapshot ->
-                val tasks = snapshot.tasks
-                val blocks = snapshot.blocks
-                val prefs = snapshot.prefs
-
-                _uiState.update { current ->
-                    val filtered = when (current.taskFilter) {
-                        TaskFilter.ALL -> tasks
-                        TaskFilter.ACTIVE -> tasks.filter { !it.isCompleted }
-                        TaskFilter.COMPLETED -> tasks.filter { it.isCompleted }
+                .flowOn(Dispatchers.Default)
+                .collect { payload ->
+                    if (_themeMode.value != payload.prefs.themeMode) {
+                        _themeMode.value = payload.prefs.themeMode
                     }
-                    val grouped = Quadrant.entries.associateWith { quadrant ->
-                        filtered.filter { it.quadrant == quadrant }
-                    }
-                    val evaluation = buildEvaluationSummary(tasks)
-                    val selectedTaskStillExists = tasks.any { it.id == current.pomodoro.selectedTaskId }
-                    val fallbackTaskId = if (selectedTaskStillExists) {
-                        current.pomodoro.selectedTaskId
-                    } else {
-                        tasks.firstOrNull { !it.isCompleted && it.quadrant == Quadrant.Q1_DO_FIRST }?.id
-                            ?: tasks.firstOrNull { !it.isCompleted }?.id
-                    }
+                    _uiState.update { current ->
+                        val selectedTaskStillExists =
+                            current.pomodoro.selectedTaskId != null &&
+                                payload.tasks.any { it.id == current.pomodoro.selectedTaskId }
+                        val fallbackTaskId = if (selectedTaskStillExists) {
+                            current.pomodoro.selectedTaskId
+                        } else {
+                            payload.defaultFocusTaskId
+                        }
 
-                    current.copy(
-                        allTasks = tasks,
-                        tasksByQuadrant = grouped,
-                        timeBlocksByHour = blocks.associateBy { it.hourStart },
-                        evaluation = evaluation,
-                        hasRequestedNotifications = prefs.hasRequestedNotifications,
-                        themeMode = prefs.themeMode,
-                        pomodoro = current.pomodoro.copy(
-                            selectedTaskId = fallbackTaskId,
-                            focusSessionsToday = prefs.sessionsToday,
-                            soundEnabled = prefs.soundEnabled
+                        current.copy(
+                            allTasks = payload.tasks,
+                            tasksByQuadrant = payload.tasksByQuadrant,
+                            timeBlocksByHour = payload.blocksByHour,
+                            evaluation = payload.evaluation,
+                            hasRequestedNotifications = payload.prefs.hasRequestedNotifications,
+                            themeMode = payload.prefs.themeMode,
+                            pomodoro = current.pomodoro.copy(
+                                selectedTaskId = fallbackTaskId,
+                                focusSessionsToday = payload.prefs.focusSessionsToday,
+                                soundEnabled = payload.prefs.soundEnabled
+                            )
                         )
-                    )
+                    }
                 }
-                val blocksMap = blocks.associateBy { it.hourStart }
-                DeadlineScheduler.syncTaskDeadlineAlarms(appContext, tasks)
-                DeadlineScheduler.syncScheduleAlarms(appContext, blocksMap)
-                checkAndPushImminentDeadlines(tasks, blocks)
-            }
         }
 
-        viewModelScope.launch {
+        // Background alarm sync pipeline: runs ONLY when tasks or blocks change, never on theme/sound changes
+        viewModelScope.launch(Dispatchers.Default) {
+            combine(repository.allTasks, repository.allTimeBlocks) { tasks, blocks ->
+                tasks to blocks
+            }
+                .distinctUntilChanged()
+                .collect { (tasks, blocks) ->
+                    val blocksMap = blocks.associateBy { it.hourStart }
+                    DeadlineScheduler.syncTaskDeadlineAlarms(appContext, tasks)
+                    DeadlineScheduler.syncScheduleAlarms(appContext, blocksMap)
+                    checkAndPushImminentDeadlines(tasks, blocks)
+                }
+        }
+
+        // Periodic 60s imminent-deadline check on background dispatcher; skips work if nothing pending
+        viewModelScope.launch(Dispatchers.Default) {
             while (true) {
                 delay(60_000L)
                 val state = _uiState.value
-                checkAndPushImminentDeadlines(
-                    tasks = state.allTasks,
-                    blocks = state.timeBlocksByHour.values.toList()
-                )
+                val tasks = state.allTasks
+                val blocksMap = state.timeBlocksByHour
+                if (tasks.isNotEmpty() || blocksMap.isNotEmpty()) {
+                    checkAndPushImminentDeadlines(
+                        tasks = tasks,
+                        blocks = blocksMap.values
+                    )
+                }
             }
         }
     }
 
+    private fun buildUiPayload(
+        tasks: List<TaskEntity>,
+        blocks: List<TimeBlockEntity>,
+        prefs: PrefsSnapshot,
+        filter: TaskFilter
+    ): UiPayload {
+        val tasksByQuadrant = groupTasksByQuadrant(tasks, filter)
+        val evaluation = buildEvaluationSummary(tasks)
+        val blocksByHour = if (blocks.isEmpty()) emptyMap() else blocks.associateBy { it.hourStart }
+
+        var firstQ1Active: Long? = null
+        var firstAnyActive: Long? = null
+        for (task in tasks) {
+            if (!task.isCompleted) {
+                if (firstAnyActive == null) firstAnyActive = task.id
+                if (firstQ1Active == null && task.quadrant == Quadrant.Q1_DO_FIRST) {
+                    firstQ1Active = task.id
+                    break
+                }
+            }
+        }
+
+        return UiPayload(
+            tasks = tasks,
+            tasksByQuadrant = tasksByQuadrant,
+            blocksByHour = blocksByHour,
+            evaluation = evaluation,
+            prefs = prefs,
+            defaultFocusTaskId = firstQ1Active ?: firstAnyActive
+        )
+    }
+
+    private fun groupTasksByQuadrant(
+        tasks: List<TaskEntity>,
+        filter: TaskFilter
+    ): Map<Quadrant, List<TaskEntity>> {
+        val map = EnumMap<Quadrant, MutableList<TaskEntity>>(Quadrant::class.java)
+        for (q in Quadrant.entries) {
+            map[q] = ArrayList()
+        }
+        for (task in tasks) {
+            val include = when (filter) {
+                TaskFilter.ALL -> true
+                TaskFilter.ACTIVE -> !task.isCompleted
+                TaskFilter.COMPLETED -> task.isCompleted
+            }
+            if (include) {
+                map[task.quadrant]?.add(task)
+            }
+        }
+        return map
+    }
+
     private suspend fun checkAndPushImminentDeadlines(
         tasks: List<TaskEntity>,
-        blocks: List<TimeBlockEntity>
+        blocks: Collection<TimeBlockEntity>
     ) {
         if (!NotificationHelper.areNotificationsEnabled(appContext)) return
-        val now = System.currentTimeMillis()
-        val notifiedKeys = repository.getNotifiedReminderKeys()
-        val todayKey = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(now))
 
+        val hasPendingTask = tasks.any { !it.isCompleted }
+        val hasPendingBlock = blocks.any { !it.isCompleted }
+        if (!hasPendingTask && !hasPendingBlock) return
+
+        val keys = cachedNotifiedKeys ?: withContext(Dispatchers.IO) {
+            repository.getNotifiedReminderKeys().toMutableSet().also { cachedNotifiedKeys = it }
+        }
+
+        val now = System.currentTimeMillis()
         val twoHoursMs = 2 * 60 * 60 * 1000L
         val thirtyMinMs = 30 * 60 * 1000L
         val fifteenMinMs = 15 * 60 * 1000L
         val fiveMinMs = 5 * 60 * 1000L
 
-        tasks.filter { !it.isCompleted }.forEach { task ->
-            val diff = task.deadlineMillis - now
-            when {
-                diff in (-thirtyMinMs)..thirtyMinMs -> {
-                    val key = "task_${task.id}_30m"
-                    if (key !in notifiedKeys) {
-                        repository.addNotifiedReminderKey(key)
-                        NotificationHelper.showDeadlineHeadsUpNotification(
-                            context = appContext,
-                            notificationId = 8500 + task.id.toInt(),
-                            title = "Deadline Sangat Dekat!",
-                            body = "Segera tuntaskan \"${task.title}\" (${task.course}) — tenggat pukul ${DateTimeFormatters.formatTime(task.deadlineMillis)}."
-                        )
+        if (hasPendingTask) {
+            for (task in tasks) {
+                if (task.isCompleted) continue
+                val diff = task.deadlineMillis - now
+                when {
+                    diff in (-thirtyMinMs)..thirtyMinMs -> {
+                        val key = "task_${task.id}_30m"
+                        if (key !in keys) {
+                            keys.add(key)
+                            repository.addNotifiedReminderKey(key)
+                            NotificationHelper.showDeadlineHeadsUpNotification(
+                                context = appContext,
+                                notificationId = 8500 + task.id.toInt(),
+                                title = "Deadline Sangat Dekat!",
+                                body = "Segera tuntaskan \"${task.title}\" (${task.course}) — tenggat pukul ${DateTimeFormatters.formatTime(task.deadlineMillis)}."
+                            )
+                        }
                     }
-                }
-                diff in (thirtyMinMs + 1)..twoHoursMs -> {
-                    val key = "task_${task.id}_2h"
-                    if (key !in notifiedKeys) {
-                        repository.addNotifiedReminderKey(key)
-                        NotificationHelper.showDeadlineHeadsUpNotification(
-                            context = appContext,
-                            notificationId = 8000 + task.id.toInt(),
-                            title = "Deadline Matriks Mendekat (< 2 Jam)",
-                            body = "${task.quadrant.code}: \"${task.title}\" (${task.course}) tenggat pukul ${DateTimeFormatters.formatTime(task.deadlineMillis)}."
-                        )
+                    diff in (thirtyMinMs + 1)..twoHoursMs -> {
+                        val key = "task_${task.id}_2h"
+                        if (key !in keys) {
+                            keys.add(key)
+                            repository.addNotifiedReminderKey(key)
+                            NotificationHelper.showDeadlineHeadsUpNotification(
+                                context = appContext,
+                                notificationId = 8000 + task.id.toInt(),
+                                title = "Deadline Matriks Mendekat (< 2 Jam)",
+                                body = "${task.quadrant.code}: \"${task.title}\" (${task.course}) tenggat pukul ${DateTimeFormatters.formatTime(task.deadlineMillis)}."
+                            )
+                        }
                     }
                 }
             }
         }
 
-        blocks.filter { !it.isCompleted }.forEach { block ->
-            val blockStartMillis = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, block.hourStart)
+        if (hasPendingBlock) {
+            val todayKey = DateTimeFormatters.todayStorageKey(now)
+            val cal = Calendar.getInstance().apply {
+                timeInMillis = now
                 set(Calendar.MINUTE, 0)
                 set(Calendar.SECOND, 0)
                 set(Calendar.MILLISECOND, 0)
-            }.timeInMillis
-
-            val diff = blockStartMillis - now
-            if (diff in (-fiveMinMs)..fifteenMinMs) {
-                val key = "block_${todayKey}_${block.hourStart}"
-                if (key !in notifiedKeys) {
-                    repository.addNotifiedReminderKey(key)
-                    val timeStr = String.format("%02d:00", block.hourStart)
-                    NotificationHelper.showDeadlineHeadsUpNotification(
-                        context = appContext,
-                        notificationId = 9000 + block.hourStart,
-                        title = "Jadwal Harian Sebentar Lagi ($timeStr)",
-                        body = "Waktunya: ${block.title}. Siapkan dirimu dengan tenang."
-                    )
+            }
+            for (block in blocks) {
+                if (block.isCompleted) continue
+                cal.set(Calendar.HOUR_OF_DAY, block.hourStart)
+                val diff = cal.timeInMillis - now
+                if (diff in (-fiveMinMs)..fifteenMinMs) {
+                    val key = "block_${todayKey}_${block.hourStart}"
+                    if (key !in keys) {
+                        keys.add(key)
+                        repository.addNotifiedReminderKey(key)
+                        val timeStr = DateTimeFormatters.formatHourSlot(block.hourStart)
+                        NotificationHelper.showDeadlineHeadsUpNotification(
+                            context = appContext,
+                            notificationId = 9000 + block.hourStart,
+                            title = "Jadwal Harian Sebentar Lagi ($timeStr)",
+                            body = "Waktunya: ${block.title}. Siapkan dirimu dengan tenang."
+                        )
+                    }
                 }
             }
         }
@@ -263,7 +345,25 @@ class TaskFlowViewModel(
 
     private fun buildEvaluationSummary(tasks: List<TaskEntity>): DailyEvaluationSummary {
         val total = tasks.size
-        val completed = tasks.count { it.isCompleted }
+        var completed = 0
+        val doneCounts = IntArray(Quadrant.entries.size)
+        val totalCounts = IntArray(Quadrant.entries.size)
+
+        for (task in tasks) {
+            val idx = task.quadrant.ordinal
+            totalCounts[idx]++
+            if (task.isCompleted) {
+                completed++
+                doneCounts[idx]++
+            }
+        }
+
+        val progressMap = EnumMap<Quadrant, QuadrantProgress>(Quadrant::class.java)
+        for (q in Quadrant.entries) {
+            val idx = q.ordinal
+            progressMap[q] = QuadrantProgress(done = doneCounts[idx], total = totalCounts[idx])
+        }
+
         val fraction = if (total > 0) completed.toFloat() / total.toFloat() else 0f
         val percent = (fraction * 100).toInt()
         val message = when {
@@ -278,7 +378,8 @@ class TaskFlowViewModel(
             completedTasks = completed,
             progressFraction = fraction,
             percentage = percent,
-            encouragementMessage = message
+            encouragementMessage = message,
+            quadrantProgress = progressMap
         )
     }
 
@@ -288,16 +389,10 @@ class TaskFlowViewModel(
 
     fun setTaskFilter(filter: TaskFilter) {
         _uiState.update { state ->
-            val filtered = when (filter) {
-                TaskFilter.ALL -> state.allTasks
-                TaskFilter.ACTIVE -> state.allTasks.filter { !it.isCompleted }
-                TaskFilter.COMPLETED -> state.allTasks.filter { it.isCompleted }
-            }
+            if (state.taskFilter == filter) return@update state
             state.copy(
                 taskFilter = filter,
-                tasksByQuadrant = Quadrant.entries.associateWith { quadrant ->
-                    filtered.filter { it.quadrant == quadrant }
-                }
+                tasksByQuadrant = groupTasksByQuadrant(state.allTasks, filter)
             )
         }
     }
@@ -354,18 +449,17 @@ class TaskFlowViewModel(
     }
 
     fun moveTaskToFocus(task: TaskEntity, switchTab: Boolean = true) {
+        val focusTotal = _uiState.value.pomodoro.focusDurationMinutes * 60
+        if (!_uiState.value.pomodoro.isRunning) {
+            _remainingSeconds.value = focusTotal
+        }
         _uiState.update { state ->
             state.copy(
                 currentTab = if (switchTab) MainTab.POMODORO else state.currentTab,
                 pomodoro = state.pomodoro.copy(
                     selectedTaskId = task.id,
                     mode = PomodoroMode.FOCUS,
-                    totalSeconds = state.pomodoro.focusDurationMinutes * 60,
-                    remainingSeconds = if (state.pomodoro.isRunning) {
-                        state.pomodoro.remainingSeconds
-                    } else {
-                        state.pomodoro.focusDurationMinutes * 60
-                    }
+                    totalSeconds = focusTotal
                 )
             )
         }
@@ -386,7 +480,7 @@ class TaskFlowViewModel(
             _uiState.update { it.copy(scheduleTargetTask = null) }
             _events.emit(
                 UiEvent.ShowMessage(
-                    "Dijadwalkan pukul ${String.format("%02d:00", hourStart)}: ${task.title}"
+                    "Dijadwalkan pukul ${DateTimeFormatters.formatHourSlot(hourStart)}: ${task.title}"
                 )
             )
         }
@@ -426,17 +520,18 @@ class TaskFlowViewModel(
         stopLongAlarm()
         DeadlineScheduler.cancelPomodoroFinish(appContext)
         timerJob?.cancel()
+        val minutes = if (mode == PomodoroMode.FOCUS) {
+            _uiState.value.pomodoro.focusDurationMinutes
+        } else {
+            _uiState.value.pomodoro.breakDurationMinutes
+        }
+        val seconds = minutes * 60
+        _remainingSeconds.value = seconds
         _uiState.update { state ->
-            val minutes = if (mode == PomodoroMode.FOCUS) {
-                state.pomodoro.focusDurationMinutes
-            } else {
-                state.pomodoro.breakDurationMinutes
-            }
             state.copy(
                 pomodoro = state.pomodoro.copy(
                     mode = mode,
-                    totalSeconds = minutes * 60,
-                    remainingSeconds = minutes * 60,
+                    totalSeconds = seconds,
                     isRunning = false
                 )
             )
@@ -447,13 +542,14 @@ class TaskFlowViewModel(
         stopLongAlarm()
         DeadlineScheduler.cancelPomodoroFinish(appContext)
         timerJob?.cancel()
+        val seconds = minutes * 60
+        _remainingSeconds.value = seconds
         _uiState.update { state ->
             state.copy(
                 pomodoro = state.pomodoro.copy(
                     mode = PomodoroMode.FOCUS,
                     focusDurationMinutes = minutes,
-                    totalSeconds = minutes * 60,
-                    remainingSeconds = minutes * 60,
+                    totalSeconds = seconds,
                     isRunning = false
                 )
             )
@@ -461,8 +557,7 @@ class TaskFlowViewModel(
     }
 
     fun toggleTimerRunning() {
-        val currentRunning = _uiState.value.pomodoro.isRunning
-        if (currentRunning) {
+        if (_uiState.value.pomodoro.isRunning) {
             pauseTimer()
         } else {
             startTimer()
@@ -475,6 +570,7 @@ class TaskFlowViewModel(
         _uiState.update { it.copy(pomodoro = it.pomodoro.copy(isRunning = true)) }
 
         val currentPomodoro = _uiState.value.pomodoro
+        val currentRemaining = _remainingSeconds.value
         val selectedTaskTitle = _uiState.value.allTasks
             .firstOrNull { it.id == currentPomodoro.selectedTaskId }
             ?.title
@@ -484,21 +580,19 @@ class TaskFlowViewModel(
         )
         DeadlineScheduler.schedulePomodoroFinish(
             context = appContext,
-            remainingSeconds = currentPomodoro.remainingSeconds,
+            remainingSeconds = currentRemaining,
             title = notifTitle,
             body = notifBody,
             playSound = currentPomodoro.soundEnabled
         )
 
         timerJob = viewModelScope.launch {
-            while (_uiState.value.pomodoro.isRunning && _uiState.value.pomodoro.remainingSeconds > 0) {
+            while (_uiState.value.pomodoro.isRunning && _remainingSeconds.value > 0) {
                 delay(1000L)
-                _uiState.update { state ->
-                    val next = (state.pomodoro.remainingSeconds - 1).coerceAtLeast(0)
-                    state.copy(pomodoro = state.pomodoro.copy(remainingSeconds = next))
-                }
+                if (!_uiState.value.pomodoro.isRunning) break
+                _remainingSeconds.value = (_remainingSeconds.value - 1).coerceAtLeast(0)
             }
-            if (_uiState.value.pomodoro.remainingSeconds == 0 && _uiState.value.pomodoro.isRunning) {
+            if (_remainingSeconds.value == 0 && _uiState.value.pomodoro.isRunning) {
                 onTimerCompleted()
             }
         }
@@ -514,17 +608,19 @@ class TaskFlowViewModel(
         stopLongAlarm()
         DeadlineScheduler.cancelPomodoroFinish(appContext)
         timerJob?.cancel()
+        val pomodoro = _uiState.value.pomodoro
+        val minutes = if (pomodoro.mode == PomodoroMode.FOCUS) {
+            pomodoro.focusDurationMinutes
+        } else {
+            pomodoro.breakDurationMinutes
+        }
+        val seconds = minutes * 60
+        _remainingSeconds.value = seconds
         _uiState.update { state ->
-            val minutes = if (state.pomodoro.mode == PomodoroMode.FOCUS) {
-                state.pomodoro.focusDurationMinutes
-            } else {
-                state.pomodoro.breakDurationMinutes
-            }
             state.copy(
                 pomodoro = state.pomodoro.copy(
                     isRunning = false,
-                    totalSeconds = minutes * 60,
-                    remainingSeconds = minutes * 60
+                    totalSeconds = seconds
                 )
             )
         }
@@ -570,20 +666,10 @@ class TaskFlowViewModel(
             val selectedTaskTitle = _uiState.value.allTasks
                 .firstOrNull { it.id == _uiState.value.pomodoro.selectedTaskId }
                 ?.title
-            val notifTitle = if (completedMode == PomodoroMode.FOCUS) {
-                "Sesi Fokus Selesai"
-            } else {
-                "Waktu Istirahat Selesai"
-            }
-            val notifBody = if (completedMode == PomodoroMode.FOCUS) {
-                if (selectedTaskTitle != null) {
-                    "Alhamdulillah! Sesi untuk \"$selectedTaskTitle\" selesai. Istirahat sejenak 5 menit."
-                } else {
-                    "Alhamdulillah! Sesi fokus selesai. Istirahat sejenak 5 menit untuk menjaga ketenangan."
-                }
-            } else {
-                "Pikiran lebih segar? Mari lanjutkan langkah berikutnya dengan tenang."
-            }
+            val (notifTitle, notifBody) = buildPomodoroNotificationCopy(
+                mode = completedMode,
+                selectedTaskTitle = selectedTaskTitle
+            )
             NotificationHelper.showPomodoroFinishedNotification(appContext, notifTitle, notifBody)
             GentleChimePlayer.startLongAlarm(appContext, soundOn)
         }
@@ -661,17 +747,13 @@ class TaskFlowViewModel(
         super.onCleared()
     }
 
-    private data class PrefsSnapshot(
-        val sessionsToday: Int,
-        val soundEnabled: Boolean,
-        val hasRequestedNotifications: Boolean,
-        val themeMode: ThemeMode
-    )
-
-    private data class CombinedSnapshot(
+    private data class UiPayload(
         val tasks: List<TaskEntity>,
-        val blocks: List<TimeBlockEntity>,
-        val prefs: PrefsSnapshot
+        val tasksByQuadrant: Map<Quadrant, List<TaskEntity>>,
+        val blocksByHour: Map<Int, TimeBlockEntity>,
+        val evaluation: DailyEvaluationSummary,
+        val prefs: PrefsSnapshot,
+        val defaultFocusTaskId: Long?
     )
 
     class Factory(

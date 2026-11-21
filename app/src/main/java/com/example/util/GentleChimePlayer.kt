@@ -22,6 +22,8 @@ object GentleChimePlayer {
     private val lock = Any()
     private var activeMediaPlayer: MediaPlayer? = null
     private var activeAudioTrack: AudioTrack? = null
+    private var activePreviewTrack: AudioTrack? = null
+    private var previewPcmCache: ShortArray? = null
 
     suspend fun startLongAlarm(context: Context, playSound: Boolean) {
         stopAlarm(context)
@@ -38,27 +40,11 @@ object GentleChimePlayer {
 
     suspend fun playPreviewChime() {
         withContext(Dispatchers.IO) {
+            var track: AudioTrack? = null
             try {
+                stopPreviewTrack()
                 val sampleRate = 22050
-                val durationSec = 1.6
-                val numSamples = (sampleRate * durationSec).toInt()
-                val buffer = ShortArray(numSamples)
-                val notes = listOf(523.25 to 0.0, 659.25 to 0.16, 783.99 to 0.32)
-
-                for (i in 0 until numSamples) {
-                    val t = i.toDouble() / sampleRate
-                    var sample = 0.0
-                    for ((freq, startSec) in notes) {
-                        if (t >= startSec) {
-                            val dt = t - startSec
-                            val env = if (dt < 0.03) dt / 0.03 else exp(-(dt - 0.03) * 3.0)
-                            sample += 0.35 * sin(2.0 * PI * freq * dt) * env
-                        }
-                    }
-                    val scaled = (sample * 0.42 * Short.MAX_VALUE).toInt()
-                        .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt())
-                    buffer[i] = scaled.toShort()
-                }
+                val buffer = previewPcmCache ?: buildPreviewPcm(sampleRate).also { previewPcmCache = it }
 
                 val attrs = AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_NOTIFICATION)
@@ -69,22 +55,81 @@ object GentleChimePlayer {
                     .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
                     .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
                     .build()
-                val track = AudioTrack.Builder()
+                track = AudioTrack.Builder()
                     .setAudioAttributes(attrs)
                     .setAudioFormat(format)
                     .setTransferMode(AudioTrack.MODE_STATIC)
                     .setBufferSizeInBytes(buffer.size * 2)
                     .build()
                 track.write(buffer, 0, buffer.size)
+                synchronized(lock) {
+                    activePreviewTrack = track
+                }
                 track.play()
                 kotlinx.coroutines.delay(1700L)
-                try {
-                    track.stop()
-                    track.release()
-                } catch (_: Throwable) {
-                }
             } catch (_: Throwable) {
+            } finally {
+                if (track != null) {
+                    synchronized(lock) {
+                        if (activePreviewTrack === track) {
+                            activePreviewTrack = null
+                        }
+                    }
+                    releaseTrackQuietly(track)
+                }
             }
+        }
+    }
+
+    private fun buildPreviewPcm(sampleRate: Int): ShortArray {
+        val durationSec = 1.6
+        val numSamples = (sampleRate * durationSec).toInt()
+        val buffer = ShortArray(numSamples)
+        val freq1 = 523.25
+        val freq2 = 659.25
+        val freq3 = 783.99
+
+        for (i in 0 until numSamples) {
+            val t = i.toDouble() / sampleRate
+            var sample = 0.0
+            val env1 = if (t < 0.03) t / 0.03 else exp(-(t - 0.03) * 3.0)
+            sample += 0.35 * sin(2.0 * PI * freq1 * t) * env1
+
+            if (t >= 0.16) {
+                val dt2 = t - 0.16
+                val env2 = if (dt2 < 0.03) dt2 / 0.03 else exp(-(dt2 - 0.03) * 3.0)
+                sample += 0.35 * sin(2.0 * PI * freq2 * dt2) * env2
+            }
+            if (t >= 0.32) {
+                val dt3 = t - 0.32
+                val env3 = if (dt3 < 0.03) dt3 / 0.03 else exp(-(dt3 - 0.03) * 3.0)
+                sample += 0.35 * sin(2.0 * PI * freq3 * dt3) * env3
+            }
+
+            val scaled = (sample * 0.42 * Short.MAX_VALUE).toInt()
+                .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt())
+            buffer[i] = scaled.toShort()
+        }
+        return buffer
+    }
+
+    private fun stopPreviewTrack() {
+        val oldTrack = synchronized(lock) {
+            activePreviewTrack.also { activePreviewTrack = null }
+        }
+        oldTrack?.let { releaseTrackQuietly(it) }
+    }
+
+    private fun releaseTrackQuietly(track: AudioTrack) {
+        try {
+            track.pause()
+            track.flush()
+            track.stop()
+        } catch (_: Throwable) {
+        }
+        try {
+            track.release()
+        } catch (_: Throwable) {
         }
     }
 
@@ -106,18 +151,14 @@ object GentleChimePlayer {
             activeMediaPlayer = null
 
             activeAudioTrack?.let { track ->
-                try {
-                    track.pause()
-                    track.flush()
-                    track.stop()
-                } catch (_: Throwable) {
-                }
-                try {
-                    track.release()
-                } catch (_: Throwable) {
-                }
+                releaseTrackQuietly(track)
             }
             activeAudioTrack = null
+
+            activePreviewTrack?.let { track ->
+                releaseTrackQuietly(track)
+            }
+            activePreviewTrack = null
         }
 
         try {

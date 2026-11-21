@@ -50,15 +50,17 @@ object DeadlineScheduler {
     }
 
     fun syncTaskDeadlineAlarms(context: Context, tasks: List<TaskEntity>) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
         val now = System.currentTimeMillis()
         tasks.forEach { task ->
             val req2h = REQ_TASK_2H_BASE + (task.id.toInt() and 0x0FFF)
             val req30m = REQ_TASK_30M_BASE + (task.id.toInt() and 0x0FFF)
 
             if (task.isCompleted) {
-                cancelAlarm(context, req2h)
-                cancelAlarm(context, req30m)
+                cancelAlarm(context, alarmManager, req2h)
+                cancelAlarm(context, alarmManager, req30m)
             } else {
+                val formattedTime = DateTimeFormatters.formatTime(task.deadlineMillis)
                 val trigger2h = task.deadlineMillis - TWO_HOURS_MS
                 if (trigger2h > now) {
                     val intent = Intent(context, ReminderReceiver::class.java).apply {
@@ -67,12 +69,12 @@ object DeadlineScheduler {
                         putExtra(ReminderReceiver.EXTRA_TITLE, "Deadline Matriks 2 Jam Lagi")
                         putExtra(
                             ReminderReceiver.EXTRA_BODY,
-                            "${task.quadrant.code}: \"${task.title}\" (${task.course}) jatuh tempo pukul ${DateTimeFormatters.formatTime(task.deadlineMillis)}."
+                            "${task.quadrant.code}: \"${task.title}\" (${task.course}) jatuh tempo pukul $formattedTime."
                         )
                     }
-                    scheduleAlarm(context, req2h, trigger2h, intent)
+                    scheduleAlarm(context, alarmManager, req2h, trigger2h, intent)
                 } else {
-                    cancelAlarm(context, req2h)
+                    cancelAlarm(context, alarmManager, req2h)
                 }
 
                 val trigger30m = task.deadlineMillis - THIRTY_MINUTES_MS
@@ -83,51 +85,52 @@ object DeadlineScheduler {
                         putExtra(ReminderReceiver.EXTRA_TITLE, "Deadline Sangat Dekat (30 Menit)!")
                         putExtra(
                             ReminderReceiver.EXTRA_BODY,
-                            "Segera tuntaskan \"${task.title}\" (${task.course}) sebelum ${DateTimeFormatters.formatTime(task.deadlineMillis)}."
+                            "Segera tuntaskan \"${task.title}\" (${task.course}) sebelum $formattedTime."
                         )
                     }
-                    scheduleAlarm(context, req30m, trigger30m, intent)
+                    scheduleAlarm(context, alarmManager, req30m, trigger30m, intent)
                 } else {
-                    cancelAlarm(context, req30m)
+                    cancelAlarm(context, alarmManager, req30m)
                 }
             }
         }
     }
 
     fun syncScheduleAlarms(context: Context, blocksByHour: Map<Int, TimeBlockEntity>) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
         val now = System.currentTimeMillis()
+        val cal = Calendar.getInstance().apply {
+            timeInMillis = now
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
         for (hour in 6..21) {
             val reqCode = REQ_SCHEDULE_BASE + hour
             val block = blocksByHour[hour]
             if (block == null || block.isCompleted) {
-                cancelAlarm(context, reqCode)
+                cancelAlarm(context, alarmManager, reqCode)
                 continue
             }
 
-            val blockStartMillis = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, hour)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }.timeInMillis
-
-            val triggerAt = blockStartMillis - FIFTEEN_MINUTES_MS
+            cal.set(Calendar.HOUR_OF_DAY, hour)
+            val triggerAt = cal.timeInMillis - FIFTEEN_MINUTES_MS
             if (triggerAt > now) {
                 val intent = Intent(context, ReminderReceiver::class.java).apply {
                     putExtra(ReminderReceiver.EXTRA_TYPE, ReminderReceiver.TYPE_SCHEDULE_REMINDER)
                     putExtra(ReminderReceiver.EXTRA_NOTIFICATION_ID, 9000 + hour)
                     putExtra(
                         ReminderReceiver.EXTRA_TITLE,
-                        "Jadwal Harian ${String.format("%02d:00", hour)} Sebentar Lagi"
+                        "Jadwal Harian ${DateTimeFormatters.formatHourSlot(hour)} Sebentar Lagi"
                     )
                     putExtra(
                         ReminderReceiver.EXTRA_BODY,
                         "15 menit lagi: ${block.title}. Siapkan dirimu dengan tenang."
                     )
                 }
-                scheduleAlarm(context, reqCode, triggerAt, intent)
+                scheduleAlarm(context, alarmManager, reqCode, triggerAt, intent)
             } else {
-                cancelAlarm(context, reqCode)
+                cancelAlarm(context, alarmManager, reqCode)
             }
         }
     }
@@ -139,6 +142,16 @@ object DeadlineScheduler {
         intent: Intent
     ) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+        scheduleAlarm(context, alarmManager, requestCode, triggerAtMillis, intent)
+    }
+
+    private fun scheduleAlarm(
+        context: Context,
+        alarmManager: AlarmManager,
+        requestCode: Int,
+        triggerAtMillis: Long,
+        intent: Intent
+    ) {
         val pendingIntent = PendingIntent.getBroadcast(
             context,
             requestCode,
@@ -153,6 +166,10 @@ object DeadlineScheduler {
 
     private fun cancelAlarm(context: Context, requestCode: Int) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+        cancelAlarm(context, alarmManager, requestCode)
+    }
+
+    private fun cancelAlarm(context: Context, alarmManager: AlarmManager, requestCode: Int) {
         val intent = Intent(context, ReminderReceiver::class.java)
         val pendingIntent = PendingIntent.getBroadcast(
             context,

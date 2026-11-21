@@ -1,8 +1,11 @@
 package com.example.data
 
+import androidx.compose.runtime.Immutable
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.example.util.DateTimeFormatters
 
+@Immutable
 @Entity(tableName = "time_blocks")
 data class TimeBlockEntity(
     @PrimaryKey val hourStart: Int,
@@ -16,5 +19,5 @@ data class TimeBlockEntity(
         get() = quadrantOrdinal?.let { Quadrant.entries.getOrNull(it) }
 
     val timeRangeLabel: String
-        get() = String.format("%02d:00 - %02d:00", hourStart, hourStart + 1)
+        get() = "${DateTimeFormatters.formatHourSlot(hourStart)} - ${DateTimeFormatters.formatHourSlot(hourStart + 1)}"
 }

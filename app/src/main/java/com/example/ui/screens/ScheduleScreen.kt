@@ -57,7 +57,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
@@ -98,21 +98,25 @@ import com.example.ui.theme.Slate300
 import com.example.ui.theme.Slate400
 import com.example.ui.theme.Slate500
 import com.example.ui.theme.Slate600
+import com.example.util.DateTimeFormatters
 import kotlinx.coroutines.launch
+
+private val ScheduleDashedEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+private val QuickAssignHourRows = (6..21).chunked(4)
 
 private data class DayPeriodGroup(
     val shortChip: String,
     val title: String,
     val icon: ImageVector,
     val iconTint: Color,
-    val hours: IntRange
+    val hoursList: List<Int>
 )
 
 private val dayPeriods = listOf(
-    DayPeriodGroup("Pagi (06–11)", "Pagi (06:00 – 11:00)", Icons.Outlined.WbTwilight, Amber500, 6..10),
-    DayPeriodGroup("Siang (11–15)", "Siang (11:00 – 15:00)", Icons.Outlined.WbSunny, Sky500, 11..14),
-    DayPeriodGroup("Sore (15–18)", "Sore (15:00 – 18:00)", Icons.Outlined.WbTwilight, Color(0xFFF97316), 15..17),
-    DayPeriodGroup("Malam (18–22)", "Malam (18:00 – 22:00)", Icons.Outlined.NightsStay, Color(0xFF818CF8), 18..21)
+    DayPeriodGroup("Pagi (06–11)", "Pagi (06:00 – 11:00)", Icons.Outlined.WbTwilight, Amber500, (6..10).toList()),
+    DayPeriodGroup("Siang (11–15)", "Siang (11:00 – 15:00)", Icons.Outlined.WbSunny, Sky500, (11..14).toList()),
+    DayPeriodGroup("Sore (15–18)", "Sore (15:00 – 18:00)", Icons.Outlined.WbTwilight, Color(0xFFF97316), (15..17).toList()),
+    DayPeriodGroup("Malam (18–22)", "Malam (18:00 – 22:00)", Icons.Outlined.NightsStay, Color(0xFF818CF8), (18..21).toList())
 )
 
 @Composable
@@ -134,7 +138,7 @@ fun ScheduleScreen(
         var idx = 2
         dayPeriods.map { period ->
             val start = idx
-            idx += 1 + period.hours.count()
+            idx += 1 + period.hoursList.size
             start
         }
     }
@@ -276,7 +280,7 @@ fun ScheduleScreen(
                 }
             }
 
-            val hoursList = period.hours.toList()
+            val hoursList = period.hoursList
             hoursList.forEachIndexed { hIdx, hour ->
                 item(key = "hour_$hour") {
                     val block = uiState.timeBlocksByHour[hour]
@@ -305,7 +309,7 @@ private fun TimeBlockSlotRow(
     onClear: () -> Unit
 ) {
     val isDark = LocalIsDarkTheme.current
-    val timeLabel = String.format("%02d:00", hourStart)
+    val timeLabel = DateTimeFormatters.formatHourSlot(hourStart)
     val qColors = block?.quadrant?.colors(isDark)
 
     Row(
@@ -360,15 +364,16 @@ private fun TimeBlockSlotRow(
                     .padding(bottom = 10.dp)
                     .height(48.dp)
                     .clip(RoundedCornerShape(16.dp))
-                    .drawBehind {
-                        drawRoundRect(
-                            color = dashColor,
-                            style = Stroke(
-                                width = 1.1.dp.toPx(),
-                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
-                            ),
-                            cornerRadius = CornerRadius(16.dp.toPx(), 16.dp.toPx())
-                        )
+                    .drawWithCache {
+                        val stroke = Stroke(width = 1.1.dp.toPx(), pathEffect = ScheduleDashedEffect)
+                        val radius = CornerRadius(16.dp.toPx(), 16.dp.toPx())
+                        onDrawBehind {
+                            drawRoundRect(
+                                color = dashColor,
+                                style = stroke,
+                                cornerRadius = radius
+                            )
+                        }
                     }
                     .clickable(onClick = onTapSlot)
                     .testTag("empty_slot_$hourStart"),
@@ -419,6 +424,7 @@ private fun TimeBlockSlotRow(
                             .testTag("toggle_block_$hourStart"),
                         contentAlignment = Alignment.Center
                     ) {
+                        val circleBorderColor = if (isDark) Slate500 else Slate400.copy(alpha = 0.65f)
                         Box(
                             modifier = Modifier
                                 .size(24.dp)
@@ -426,11 +432,14 @@ private fun TimeBlockSlotRow(
                                 .background(if (block.isCompleted) Emerald500 else Color.Transparent)
                                 .then(
                                     if (!block.isCompleted) {
-                                        Modifier.drawBehind {
-                                            drawCircle(
-                                                color = if (isDark) Slate500 else Slate400.copy(alpha = 0.65f),
-                                                style = Stroke(width = 2.dp.toPx())
-                                            )
+                                        Modifier.drawWithCache {
+                                            val stroke = Stroke(width = 2.dp.toPx())
+                                            onDrawBehind {
+                                                drawCircle(
+                                                    color = circleBorderColor,
+                                                    style = stroke
+                                                )
+                                            }
                                         }
                                     } else Modifier
                                 ),
@@ -530,18 +539,19 @@ fun EditTimeBlockSheet(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "Jadwalkan Jam ${String.format("%02d:00", hourStart)}",
+                text = "Jadwalkan Jam ${DateTimeFormatters.formatHourSlot(hourStart)}",
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onBackground
             )
 
-            if (tasks.isNotEmpty()) {
+            val pendingTasks = remember(tasks) { tasks.filter { !it.isCompleted }.take(5) }
+            if (pendingTasks.isNotEmpty()) {
                 Text(
                     text = "Pilih dari Tugas Matriks",
                     style = MaterialTheme.typography.labelLarge,
                     color = if (isDark) Sky400 else Sky600
                 )
-                tasks.filter { !it.isCompleted }.take(5).forEach { task ->
+                pendingTasks.forEach { task ->
                     val qColors = task.quadrant.colors(isDark)
                     Surface(
                         shape = RoundedCornerShape(14.dp),
@@ -698,7 +708,7 @@ fun QuickAssignTaskToHourSheet(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            (6..21).chunked(4).forEach { rowHours ->
+            QuickAssignHourRows.forEach { rowHours ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -729,7 +739,7 @@ fun QuickAssignTaskToHourSheet(
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Text(
-                                    text = String.format("%02d:00", hour),
+                                    text = DateTimeFormatters.formatHourSlot(hour),
                                     fontFamily = JetBrainsMonoFamily,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,

@@ -1,6 +1,7 @@
 package com.example.data
 
 import android.content.Context
+import androidx.compose.runtime.Immutable
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -9,14 +10,21 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.example.util.DateTimeFormatters
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "taskflow_prefs")
+
+@Immutable
+data class PrefsSnapshot(
+    val focusSessionsToday: Int = 0,
+    val soundEnabled: Boolean = true,
+    val hasRequestedNotifications: Boolean = false,
+    val themeMode: ThemeMode = ThemeMode.DARK
+)
 
 class PreferencesManager(private val context: Context) {
 
@@ -30,25 +38,22 @@ class PreferencesManager(private val context: Context) {
         val THEME_MODE = stringPreferencesKey("theme_mode")
     }
 
-    private fun todayKey(): String =
-        SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
-
-    val soundEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
-        prefs[Keys.SOUND_ENABLED] ?: true
-    }
-
-    val hasRequestedNotifications: Flow<Boolean> = context.dataStore.data.map { prefs ->
-        prefs[Keys.HAS_REQUESTED_NOTIFICATIONS] ?: false
-    }
-
-    val themeMode: Flow<ThemeMode> = context.dataStore.data.map { prefs ->
-        ThemeMode.fromStorage(prefs[Keys.THEME_MODE])
-    }
-
-    val focusSessionsToday: Flow<Int> = context.dataStore.data.map { prefs ->
-        val savedDate = prefs[Keys.LAST_SESSION_DATE]
-        if (savedDate == todayKey()) prefs[Keys.FOCUS_SESSIONS_TODAY] ?: 0 else 0
-    }
+    val prefsSnapshot: Flow<PrefsSnapshot> = context.dataStore.data
+        .map { prefs ->
+            val savedDate = prefs[Keys.LAST_SESSION_DATE]
+            val sessionsToday = if (savedDate == DateTimeFormatters.todayStorageKey()) {
+                prefs[Keys.FOCUS_SESSIONS_TODAY] ?: 0
+            } else {
+                0
+            }
+            PrefsSnapshot(
+                focusSessionsToday = sessionsToday,
+                soundEnabled = prefs[Keys.SOUND_ENABLED] ?: true,
+                hasRequestedNotifications = prefs[Keys.HAS_REQUESTED_NOTIFICATIONS] ?: false,
+                themeMode = ThemeMode.fromStorage(prefs[Keys.THEME_MODE])
+            )
+        }
+        .distinctUntilChanged()
 
     suspend fun isSeeded(): Boolean {
         return context.dataStore.data.first()[Keys.IS_SEEDED] ?: false
@@ -67,7 +72,7 @@ class PreferencesManager(private val context: Context) {
     }
 
     suspend fun incrementFocusSessionToday() {
-        val today = todayKey()
+        val today = DateTimeFormatters.todayStorageKey()
         context.dataStore.edit { prefs ->
             val current = if (prefs[Keys.LAST_SESSION_DATE] == today) {
                 prefs[Keys.FOCUS_SESSIONS_TODAY] ?: 0
@@ -103,3 +108,4 @@ class PreferencesManager(private val context: Context) {
         }
     }
 }
+

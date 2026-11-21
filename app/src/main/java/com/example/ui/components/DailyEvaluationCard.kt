@@ -41,8 +41,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.Quadrant
-import com.example.data.TaskEntity
 import com.example.ui.DailyEvaluationSummary
+import com.example.ui.QuadrantProgress
 import com.example.ui.theme.Emerald400
 import com.example.ui.theme.Emerald500
 import com.example.ui.theme.JetBrainsMonoFamily
@@ -60,7 +60,6 @@ import com.example.ui.theme.Slate400
 @Composable
 fun DailyEvaluationCard(
     evaluation: DailyEvaluationSummary,
-    allTasks: List<TaskEntity>,
     focusSessionsToday: Int,
     modifier: Modifier = Modifier
 ) {
@@ -173,8 +172,7 @@ fun DailyEvaluationCard(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Quadrant.entries.forEach { quadrant ->
-                    val qTasks = allTasks.filter { it.quadrant == quadrant }
-                    val qDone = qTasks.count { it.isCompleted }
+                    val progress = evaluation.quadrantProgress[quadrant] ?: QuadrantProgress()
                     val qColor = quadrant.colors(isDark)
                     Surface(
                         shape = RoundedCornerShape(10.dp),
@@ -193,7 +191,7 @@ fun DailyEvaluationCard(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "${quadrant.shortCode}: $qDone/${qTasks.size}",
+                                text = "${quadrant.shortCode}: ${progress.done}/${progress.total}",
                                 fontFamily = JetBrainsMonoFamily,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold,

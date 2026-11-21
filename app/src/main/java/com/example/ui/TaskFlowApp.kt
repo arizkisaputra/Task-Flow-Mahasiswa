@@ -109,8 +109,12 @@ import com.example.ui.theme.Slate400
 import com.example.ui.theme.Slate500
 import com.example.ui.theme.Slate600
 import com.example.ui.theme.Teal500
+import com.example.util.DateTimeFormatters
 import com.example.util.NotificationHelper
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+
+private val BrandBorderBrush = Brush.linearGradient(listOf(Sky400, Teal500))
 
 @Composable
 fun TaskFlowApp(viewModel: TaskFlowViewModel) {
@@ -229,7 +233,7 @@ fun TaskFlowApp(viewModel: TaskFlowViewModel) {
                     currentTab = uiState.currentTab,
                     isWideHeader = isWideHeader,
                     isPomodoroRunning = uiState.pomodoro.isRunning,
-                    pomodoroTime = uiState.pomodoro.formattedTime,
+                    remainingSecondsFlow = viewModel.remainingSeconds,
                     notificationsEnabled = notificationsEnabled,
                     onSelectTab = viewModel::selectTab,
                     onOpenAddTask = { viewModel.openAddTaskSheet(true) },
@@ -291,6 +295,8 @@ fun TaskFlowApp(viewModel: TaskFlowViewModel) {
                     MainTab.POMODORO -> {
                         PomodoroScreen(
                             uiState = uiState,
+                            remainingSecondsFlow = viewModel.remainingSeconds,
+                            isWideStudio = isWideHeader,
                             onSwitchMode = viewModel::switchPomodoroMode,
                             onSetFocusMinutes = viewModel::setFocusPresetMinutes,
                             onToggleRunning = viewModel::toggleTimerRunning,
@@ -426,7 +432,7 @@ private fun TaskFlowHeaderBar(
     currentTab: MainTab,
     isWideHeader: Boolean,
     isPomodoroRunning: Boolean,
-    pomodoroTime: String,
+    remainingSecondsFlow: StateFlow<Int>,
     notificationsEnabled: Boolean,
     onSelectTab: (MainTab) -> Unit,
     onOpenAddTask: () -> Unit,
@@ -465,7 +471,7 @@ private fun TaskFlowHeaderBar(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(RoundedCornerShape(14.dp))
-                            .background(Brush.linearGradient(listOf(Sky400, Teal500)))
+                            .background(BrandBorderBrush)
                             .padding(1.2.dp)
                     ) {
                         Box(
@@ -619,33 +625,11 @@ private fun TaskFlowHeaderBar(
                     }
 
                     if (isPomodoroRunning && currentTab != MainTab.POMODORO) {
-                        Surface(
-                            shape = RoundedCornerShape(50),
-                            color = Sky400.copy(alpha = 0.14f),
-                            border = BorderStroke(1.dp, Sky400.copy(alpha = 0.30f)),
-                            onClick = { onSelectTab(MainTab.POMODORO) },
-                            modifier = Modifier.testTag("running_timer_pill")
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Timer,
-                                    contentDescription = "Timer aktif",
-                                    tint = if (isDark) Sky400 else Sky600,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = pomodoroTime,
-                                    fontFamily = JetBrainsMonoFamily,
-                                    fontSize = 11.5.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isDark) Sky400 else Sky600
-                                )
-                            }
-                        }
+                        RunningTimerPill(
+                            remainingSecondsFlow = remainingSecondsFlow,
+                            isDark = isDark,
+                            onClick = { onSelectTab(MainTab.POMODORO) }
+                        )
                     }
 
                     if (!notificationsEnabled) {
@@ -686,6 +670,44 @@ private fun TaskFlowHeaderBar(
             }
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+    }
+}
+
+@Composable
+private fun RunningTimerPill(
+    remainingSecondsFlow: StateFlow<Int>,
+    isDark: Boolean,
+    onClick: () -> Unit
+) {
+    val remainingSeconds by remainingSecondsFlow.collectAsStateWithLifecycle()
+    val formattedTime = DateTimeFormatters.formatTimerSeconds(remainingSeconds)
+
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = Sky400.copy(alpha = 0.14f),
+        border = BorderStroke(1.dp, Sky400.copy(alpha = 0.30f)),
+        onClick = onClick,
+        modifier = Modifier.testTag("running_timer_pill")
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Timer,
+                contentDescription = "Timer aktif",
+                tint = if (isDark) Sky400 else Sky600,
+                modifier = Modifier.size(14.dp)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = formattedTime,
+                fontFamily = JetBrainsMonoFamily,
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (isDark) Sky400 else Sky600
+            )
+        }
     }
 }
 

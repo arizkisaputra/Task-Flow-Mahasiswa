@@ -1,6 +1,5 @@
 package com.example.ui.screens
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,11 +35,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
@@ -78,6 +77,8 @@ import com.example.ui.theme.Slate400
 import com.example.ui.theme.Slate500
 import com.example.ui.theme.Slate600
 import com.example.util.DateTimeFormatters
+
+private val MatrixDashedEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
 
 @Composable
 fun MatrixScreen(
@@ -124,7 +125,6 @@ fun MatrixScreen(
                     )
                     DailyEvaluationCard(
                         evaluation = uiState.evaluation,
-                        allTasks = uiState.allTasks,
                         focusSessionsToday = uiState.pomodoro.focusSessionsToday,
                         modifier = Modifier
                             .weight(5f)
@@ -139,7 +139,6 @@ fun MatrixScreen(
             item(key = "daily_evaluation_elevated") {
                 DailyEvaluationCard(
                     evaluation = uiState.evaluation,
-                    allTasks = uiState.allTasks,
                     focusSessionsToday = uiState.pomodoro.focusSessionsToday
                 )
             }
@@ -454,15 +453,16 @@ private fun QuadrantCard(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .drawBehind {
-                            drawRoundRect(
-                                color = dashColor,
-                                style = Stroke(
-                                    width = 1.2.dp.toPx(),
-                                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
-                                ),
-                                cornerRadius = CornerRadius(16.dp.toPx(), 16.dp.toPx())
-                            )
+                        .drawWithCache {
+                            val stroke = Stroke(width = 1.2.dp.toPx(), pathEffect = MatrixDashedEffect)
+                            val radius = CornerRadius(16.dp.toPx(), 16.dp.toPx())
+                            onDrawBehind {
+                                drawRoundRect(
+                                    color = dashColor,
+                                    style = stroke,
+                                    cornerRadius = radius
+                                )
+                            }
                         }
                         .padding(vertical = 22.dp, horizontal = 16.dp),
                     contentAlignment = Alignment.Center
@@ -501,11 +501,14 @@ private fun QuadrantTaskCard(
     onDeleteTask: () -> Unit
 ) {
     val isDark = LocalIsDarkTheme.current
-    val cardColor by animateColorAsState(
-        targetValue = if (isDark) Obsidian900.copy(alpha = 0.92f) else PureWhite.copy(alpha = 0.96f),
-        label = "task_card_bg"
-    )
-    val isOverdue = DateTimeFormatters.isDeadlineOverdue(task.deadlineMillis, task.isCompleted)
+    val cardColor = if (isDark) Obsidian900.copy(alpha = 0.92f) else PureWhite.copy(alpha = 0.96f)
+    val isOverdue = remember(task.deadlineMillis, task.isCompleted) {
+        DateTimeFormatters.isDeadlineOverdue(task.deadlineMillis, task.isCompleted)
+    }
+    val deadlineLabel = remember(task.deadlineMillis) {
+        DateTimeFormatters.formatDeadlineLabel(task.deadlineMillis)
+    }
+    val circleStrokeColor = if (isDark) Slate500 else Slate300
 
     Surface(
         modifier = Modifier
@@ -544,11 +547,14 @@ private fun QuadrantTaskCard(
                             .background(if (task.isCompleted) Emerald500 else Color.Transparent)
                             .then(
                                 if (!task.isCompleted) {
-                                    Modifier.drawBehind {
-                                        drawCircle(
-                                            color = if (isDark) Slate500 else Slate300,
-                                            style = Stroke(width = 2.dp.toPx())
-                                        )
+                                    Modifier.drawWithCache {
+                                        val stroke = Stroke(width = 2.dp.toPx())
+                                        onDrawBehind {
+                                            drawCircle(
+                                                color = circleStrokeColor,
+                                                style = stroke
+                                            )
+                                        }
                                     }
                                 } else Modifier
                             ),
@@ -612,7 +618,7 @@ private fun QuadrantTaskCard(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = DateTimeFormatters.formatDeadlineLabel(task.deadlineMillis),
+                                text = deadlineLabel,
                                 fontFamily = JetBrainsMonoFamily,
                                 fontSize = 11.sp,
                                 color = if (isOverdue) Rose400 else {

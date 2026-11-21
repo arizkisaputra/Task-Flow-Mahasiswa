@@ -12,7 +12,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -58,13 +57,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -99,11 +99,15 @@ import com.example.ui.theme.Slate100
 import com.example.ui.theme.Slate200
 import com.example.ui.theme.Slate300
 import com.example.ui.theme.Slate400
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.util.DateTimeFormatters
+import kotlinx.coroutines.flow.StateFlow
 
 @Composable
 fun PomodoroScreen(
     uiState: TaskFlowUiState,
+    remainingSecondsFlow: StateFlow<Int>,
+    isWideStudio: Boolean,
     onSwitchMode: (PomodoroMode) -> Unit,
     onSetFocusMinutes: (Int) -> Unit,
     onToggleRunning: () -> Unit,
@@ -116,7 +120,9 @@ fun PomodoroScreen(
     modifier: Modifier = Modifier
 ) {
     val pomodoro = uiState.pomodoro
-    val selectedTask = uiState.allTasks.firstOrNull { it.id == pomodoro.selectedTaskId }
+    val selectedTask = remember(uiState.allTasks, pomodoro.selectedTaskId) {
+        uiState.allTasks.firstOrNull { it.id == pomodoro.selectedTaskId }
+    }
     var showTaskSelector by remember { mutableStateOf(false) }
 
     val isDark = LocalIsDarkTheme.current
@@ -127,17 +133,14 @@ fun PomodoroScreen(
         if (isDark) Emerald400 else Emerald600
     }
 
-    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
-        val isWideStudio = maxWidth >= 680.dp
-
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .testTag("pomodoro_screen"),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 104.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+    LazyColumn(
+        modifier = modifier
+            .fillMaxSize()
+            .testTag("pomodoro_screen"),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 104.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
             item(key = "pomodoro_header") {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -234,6 +237,7 @@ fun PomodoroScreen(
                     ) {
                         MainTimerStudioCard(
                             uiState = uiState,
+                            remainingSecondsFlow = remainingSecondsFlow,
                             accentColor = accentColor,
                             onSwitchMode = onSwitchMode,
                             onSetFocusMinutes = onSetFocusMinutes,
@@ -258,6 +262,7 @@ fun PomodoroScreen(
                 item(key = "main_timer_card") {
                     MainTimerStudioCard(
                         uiState = uiState,
+                        remainingSecondsFlow = remainingSecondsFlow,
                         accentColor = accentColor,
                         onSwitchMode = onSwitchMode,
                         onSetFocusMinutes = onSetFocusMinutes,
@@ -278,7 +283,6 @@ fun PomodoroScreen(
                     CalmStudyGuidanceCard()
                 }
             }
-        }
     }
 
     if (showTaskSelector) {
@@ -344,6 +348,7 @@ fun PomodoroScreen(
 @Composable
 private fun MainTimerStudioCard(
     uiState: TaskFlowUiState,
+    remainingSecondsFlow: StateFlow<Int>,
     accentColor: Color,
     onSwitchMode: (PomodoroMode) -> Unit,
     onSetFocusMinutes: (Int) -> Unit,
@@ -354,25 +359,6 @@ private fun MainTimerStudioCard(
     val pomodoro = uiState.pomodoro
     val isDark = LocalIsDarkTheme.current
     val isFocus = pomodoro.mode == PomodoroMode.FOCUS
-    val remainingFraction = (1f - pomodoro.progressFraction).coerceIn(0f, 1f)
-
-    val animatedSweepFraction by animateFloatAsState(
-        targetValue = remainingFraction,
-        animationSpec = tween(durationMillis = 350),
-        label = "pomodoro_ring_progress"
-    )
-
-    val infiniteTransition = rememberInfiniteTransition(label = "breathing_halo")
-    val pulseAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.14f,
-        targetValue = 0.28f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 2000),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pulse_alpha"
-    )
-    val haloAlpha = if (pomodoro.isRunning) pulseAlpha else 0.10f
     val ringTrackColor = if (isDark) Obsidian900 else Slate100
     val innerHairlineColor = if (isDark) Color.White.copy(alpha = 0.06f) else Slate200.copy(alpha = 0.8f)
 
@@ -488,96 +474,16 @@ private fun MainTimerStudioCard(
 
             Spacer(modifier = Modifier.height(22.dp))
 
-            // Circular Radial Timer Display with Breathing Halo
-            Box(
-                modifier = Modifier
-                    .size(252.dp)
-                    .drawBehind {
-                        drawCircle(
-                            brush = Brush.radialGradient(
-                                colors = listOf(accentColor.copy(alpha = haloAlpha), Color.Transparent)
-                            ),
-                            radius = size.minDimension * 0.56f
-                        )
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    val strokeWidth = 10.dp.toPx()
-                    val diameter = size.minDimension - strokeWidth
-                    val topLeft = Offset((size.width - diameter) / 2f, (size.height - diameter) / 2f)
-                    val arcSize = Size(diameter, diameter)
-
-                    // Outer track ring
-                    drawArc(
-                        color = ringTrackColor,
-                        startAngle = 0f,
-                        sweepAngle = 360f,
-                        useCenter = false,
-                        topLeft = topLeft,
-                        size = arcSize,
-                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-                    )
-
-                    // Subtle inner border ring
-                    drawCircle(
-                        color = innerHairlineColor,
-                        radius = (diameter / 2f) - strokeWidth,
-                        style = Stroke(width = 1.dp.toPx())
-                    )
-
-                    // Active countdown ring
-                    if (animatedSweepFraction > 0f) {
-                        drawArc(
-                            color = accentColor,
-                            startAngle = -90f,
-                            sweepAngle = 360f * animatedSweepFraction,
-                            useCenter = false,
-                            topLeft = topLeft,
-                            size = arcSize,
-                            style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-                        )
-                    }
-                }
-
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(horizontal = 24.dp)
-                ) {
-                    Surface(
-                        shape = RoundedCornerShape(50),
-                        color = accentColor.copy(alpha = 0.12f),
-                        border = BorderStroke(1.dp, accentColor.copy(alpha = 0.25f))
-                    ) {
-                        Text(
-                            text = if (isFocus) "SESI FOKUS" else "JEDA ISTIRAHAT",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = 1.2.sp,
-                            color = accentColor,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Text(
-                        text = pomodoro.formattedTime,
-                        style = MaterialTheme.typography.displayLarge,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.testTag("pomodoro_countdown_text")
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = when {
-                            pomodoro.isRunning && isFocus -> "Fokus berlangsung tenang..."
-                            pomodoro.isRunning && !isFocus -> "Nikmati jeda istirahat..."
-                            pomodoro.remainingSeconds < pomodoro.totalSeconds -> "Dijeda sementara"
-                            else -> "Siap dimulai"
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            // Circular Radial Timer Display with Breathing Halo (isolated from outer recompositions)
+            RadialTimerSection(
+                remainingSecondsFlow = remainingSecondsFlow,
+                totalSeconds = pomodoro.totalSeconds,
+                isRunning = pomodoro.isRunning,
+                isFocus = isFocus,
+                accentColor = accentColor,
+                ringTrackColor = ringTrackColor,
+                innerHairlineColor = innerHairlineColor
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -646,6 +552,149 @@ private fun MainTimerStudioCard(
             }
         }
     }
+}
+
+@Composable
+private fun RadialTimerSection(
+    remainingSecondsFlow: StateFlow<Int>,
+    totalSeconds: Int,
+    isRunning: Boolean,
+    isFocus: Boolean,
+    accentColor: Color,
+    ringTrackColor: Color,
+    innerHairlineColor: Color
+) {
+    val remainingSeconds by remainingSecondsFlow.collectAsStateWithLifecycle()
+    val remainingFraction = if (totalSeconds > 0) {
+        (remainingSeconds.toFloat() / totalSeconds.toFloat()).coerceIn(0f, 1f)
+    } else 0f
+
+    val animatedSweepFraction by animateFloatAsState(
+        targetValue = remainingFraction,
+        animationSpec = tween(durationMillis = 350),
+        label = "pomodoro_ring_progress"
+    )
+
+    val formattedTime = DateTimeFormatters.formatTimerSeconds(remainingSeconds)
+
+    Box(
+        modifier = Modifier.size(252.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        BreathingHaloLayer(isRunning = isRunning, accentColor = accentColor)
+
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val strokeWidth = 10.dp.toPx()
+            val diameter = size.minDimension - strokeWidth
+            val topLeft = Offset((size.width - diameter) / 2f, (size.height - diameter) / 2f)
+            val arcSize = Size(diameter, diameter)
+
+            drawArc(
+                color = ringTrackColor,
+                startAngle = 0f,
+                sweepAngle = 360f,
+                useCenter = false,
+                topLeft = topLeft,
+                size = arcSize,
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+            )
+
+            drawCircle(
+                color = innerHairlineColor,
+                radius = (diameter / 2f) - strokeWidth,
+                style = Stroke(width = 1.dp.toPx())
+            )
+
+            if (animatedSweepFraction > 0f) {
+                drawArc(
+                    color = accentColor,
+                    startAngle = -90f,
+                    sweepAngle = 360f * animatedSweepFraction,
+                    useCenter = false,
+                    topLeft = topLeft,
+                    size = arcSize,
+                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                )
+            }
+        }
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(horizontal = 24.dp)
+        ) {
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = accentColor.copy(alpha = 0.12f),
+                border = BorderStroke(1.dp, accentColor.copy(alpha = 0.25f))
+            ) {
+                Text(
+                    text = if (isFocus) "SESI FOKUS" else "JEDA ISTIRAHAT",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 1.2.sp,
+                    color = accentColor,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = formattedTime,
+                style = MaterialTheme.typography.displayLarge,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.testTag("pomodoro_countdown_text")
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = when {
+                    isRunning && isFocus -> "Fokus berlangsung tenang..."
+                    isRunning && !isFocus -> "Nikmati jeda istirahat..."
+                    remainingSeconds < totalSeconds -> "Dijeda sementara"
+                    else -> "Siap dimulai"
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun BreathingHaloLayer(
+    isRunning: Boolean,
+    accentColor: Color
+) {
+    // Only allocate and run infinite transition while timer is actively counting down
+    val alphaProvider: () -> Float = if (isRunning) {
+        val infiniteTransition = rememberInfiniteTransition(label = "breathing_halo")
+        val pulseAlphaState = infiniteTransition.animateFloat(
+            initialValue = 0.14f,
+            targetValue = 0.28f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 2000),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "pulse_alpha"
+        )
+        remember(pulseAlphaState) { { pulseAlphaState.value } }
+    } else {
+        { 0.10f }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .graphicsLayer { alpha = alphaProvider() }
+            .drawWithCache {
+                val radius = size.minDimension * 0.56f
+                val brush = Brush.radialGradient(
+                    colors = listOf(accentColor, Color.Transparent),
+                    radius = radius
+                )
+                onDrawBehind {
+                    drawCircle(brush = brush, radius = radius)
+                }
+            }
+    )
 }
 
 @Composable
@@ -801,10 +850,13 @@ private fun ActiveFocusTaskCard(
 @Composable
 private fun CalmStudyGuidanceCard() {
     val isDark = LocalIsDarkTheme.current
-    val gradient = if (isDark) {
-        listOf(Obsidian850, Obsidian900)
-    } else {
-        listOf(Slate100, PureWhite)
+    val gradientBrush = remember(isDark) {
+        val gradient = if (isDark) {
+            listOf(Obsidian850, Obsidian900)
+        } else {
+            listOf(Slate100, PureWhite)
+        }
+        Brush.linearGradient(gradient)
     }
 
     Surface(
@@ -815,7 +867,7 @@ private fun CalmStudyGuidanceCard() {
     ) {
         Row(
             modifier = Modifier
-                .background(Brush.linearGradient(gradient))
+                .background(gradientBrush)
                 .padding(18.dp),
             verticalAlignment = Alignment.Top
         ) {
