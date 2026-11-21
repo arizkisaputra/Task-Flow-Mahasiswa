@@ -82,6 +82,7 @@ data class PomodoroState(
 data class TaskFlowUiState(
     val currentTab: MainTab = MainTab.MATRIX,
     val taskFilter: TaskFilter = TaskFilter.ALL,
+    val selectedQuadrantFilter: Quadrant? = null,
     val allTasks: List<TaskEntity> = emptyList(),
     val tasksByQuadrant: Map<Quadrant, List<TaskEntity>> = Quadrant.entries.associateWith { emptyList() },
     val timeBlocksByHour: Map<Int, TimeBlockEntity> = emptyMap(),
@@ -93,7 +94,7 @@ data class TaskFlowUiState(
     val scheduleTargetTask: TaskEntity? = null,
     val editingHourSlot: Int? = null,
     val hasRequestedNotifications: Boolean? = null,
-    val themeMode: ThemeMode = ThemeMode.SYSTEM
+    val themeMode: ThemeMode = ThemeMode.DARK
 )
 
 sealed interface UiEvent {
@@ -299,6 +300,10 @@ class TaskFlowViewModel(
                 }
             )
         }
+    }
+
+    fun setQuadrantFilter(quadrant: Quadrant?) {
+        _uiState.update { it.copy(selectedQuadrantFilter = quadrant) }
     }
 
     fun openAddTaskSheet(open: Boolean) {
@@ -617,6 +622,12 @@ class TaskFlowViewModel(
         }
         viewModelScope.launch {
             repository.setSoundEnabled(next)
+        }
+    }
+
+    fun testChimeSound() {
+        viewModelScope.launch {
+            GentleChimePlayer.playPreviewChime()
         }
     }
 

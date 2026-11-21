@@ -1,0 +1,1940 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>TaskFlow Mahasiswa — Tenang • Terstruktur • Amanah</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans (UI & Headings), Fraunces (Editorial Reflection), JetBrains Mono (Tabular Timer & Schedule) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            serif: ['"Fraunces"', 'Georgia', 'serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            obsidian: {
+              950: '#090D12',
+              900: '#0E141B',
+              850: '#131B24',
+              800: '#19232F',
+              700: '#243242',
+            },
+            alabaster: {
+              50: '#F7F8F6',
+              100: '#EFF1ED',
+              200: '#E2E6DF',
+            },
+            calm: {
+              sky: '#38BDF8',
+              teal: '#2DD4BF',
+              sage: '#34D399',
+              coral: '#FB7185',
+              amber: '#FBBF24',
+            }
+          },
+          boxShadow: {
+            'soft-light': '0 8px 30px -6px rgba(15, 23, 42, 0.06)',
+            'soft-dark': '0 10px 35px -8px rgba(0, 0, 0, 0.45)',
+            'glow-sky': '0 0 28px -4px rgba(56, 189, 248, 0.35)',
+            'glow-sage': '0 0 28px -4px rgba(52, 211, 153, 0.35)',
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* Custom Typography & Smooth Transitions */
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Hide scrollbars cleanly while keeping scrollability */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Subtle Breathing Animation for Active Pomodoro */
+    @keyframes calmPulse {
+      0%, 100% { transform: scale(1); opacity: 0.45; }
+      50% { transform: scale(1.04); opacity: 0.85; }
+    }
+    .animate-calm-pulse {
+      animation: calmPulse 4s ease-in-out infinite;
+    }
+
+    /* Modal Slide-Up & Fade Transitions */
+    .modal-backdrop {
+      transition: opacity 0.25s ease;
+    }
+    .modal-panel {
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+    }
+    .modal-hidden {
+      pointer-events: none;
+      opacity: 0;
+    }
+    .modal-hidden .modal-panel {
+      transform: translateY(24px) scale(0.98);
+      opacity: 0;
+    }
+
+    /* Custom Glass Surface */
+    .glass-header {
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    .glass-dock {
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+  </style>
+</head>
+<body class="bg-alabaster-50 text-slate-800 dark:bg-obsidian-950 dark:text-slate-100 min-h-screen selection:bg-sky-500/20 selection:text-sky-400">
+
+  <!-- ==================== STICKY TOP HEADER ==================== -->
+  <header class="sticky top-0 z-30 glass-header bg-alabaster-50/85 dark:bg-obsidian-950/85 border-b border-slate-200/70 dark:border-white/[0.06]">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 h-16 sm:h-18 flex items-center justify-between gap-3">
+      <!-- Brand Identity -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-sky-400 to-teal-500 p-[1px] shadow-sm">
+          <div class="w-full h-full rounded-[15px] bg-white dark:bg-obsidian-900 flex items-center justify-center">
+            <svg class="w-5 h-5 text-sky-600 dark:text-sky-400" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="3" width="7.5" height="7.5" rx="2.2" fill="currentColor" />
+              <rect x="13.5" y="3" width="7.5" height="7.5" rx="2.2" fill="currentColor" fill-opacity="0.45" />
+              <rect x="3" y="13.5" width="7.5" height="7.5" rx="2.2" fill="currentColor" fill-opacity="0.45" />
+              <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2.2" fill="currentColor" fill-opacity="0.8" />
+            </svg>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-white leading-none">
+              TaskFlow Mahasiswa
+            </h1>
+            <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+              v2.0
+            </span>
+          </div>
+          <p class="text-[11px] sm:text-xs font-medium text-emerald-700/90 dark:text-emerald-400/90 tracking-wide mt-1">
+            Tenang • Terstruktur • Amanah
+          </p>
+        </div>
+      </div>
+
+      <!-- Desktop Inline Navigation (Visible on md+) -->
+      <nav aria-label="Navigasi Utama Desktop" class="hidden md:flex items-center bg-slate-200/70 dark:bg-obsidian-850 p-1 rounded-2xl border border-slate-300/60 dark:border-white/[0.06]">
+        <button onclick="switchTab('matriks')" data-nav="matriks" class="nav-btn-desktop px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all">
+          <i data-lucide="layout-grid" class="w-4 h-4"></i>
+          <span>Matriks</span>
+        </button>
+        <button onclick="switchTab('fokus')" data-nav="fokus" class="nav-btn-desktop px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all">
+          <i data-lucide="timer" class="w-4 h-4"></i>
+          <span>Fokus</span>
+        </button>
+        <button onclick="switchTab('jadwal')" data-nav="jadwal" class="nav-btn-desktop px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all">
+          <i data-lucide="calendar-clock" class="w-4 h-4"></i>
+          <span>Jadwal</span>
+        </button>
+      </nav>
+
+      <!-- Utility Actions -->
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <button onclick="openAddTaskModal()" class="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-sky-600 hover:bg-sky-500 dark:bg-sky-400 dark:hover:bg-sky-300 text-white dark:text-obsidian-950 shadow-sm transition-all active:scale-95">
+          <i data-lucide="plus" class="w-4 h-4 stroke-[2.5]"></i>
+          <span>Tugas Baru</span>
+        </button>
+        <button onclick="openModal('infoModal')" aria-label="Panduan Aplikasi" class="p-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-obsidian-800 border border-transparent hover:border-slate-300/50 dark:hover:border-white/10 transition-all">
+          <i data-lucide="info" class="w-5 h-5"></i>
+        </button>
+        <button onclick="openModal('settingsModal')" aria-label="Pengaturan Tampilan" class="p-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-obsidian-800 border border-transparent hover:border-slate-300/50 dark:hover:border-white/10 transition-all">
+          <i data-lucide="settings" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN CONTENT CONTAINER ==================== -->
+  <main class="max-w-5xl mx-auto px-4 sm:px-6 pt-5 pb-32 md:pb-14">
+
+    <!-- ================================================================ -->
+    <!-- VIEW 1: MATRIKS EISENHOWER                                       -->
+    <!-- ================================================================ -->
+    <section id="view-matriks" class="space-y-6">
+
+      <!-- Top Bento Row: Reflective Wisdom Card + Daily Progress Summary -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+        <!-- Mindful Reflection Carousel (7 cols on lg) -->
+        <div class="lg:col-span-7 relative overflow-hidden rounded-3xl p-5 sm:p-6 bg-gradient-to-br from-emerald-50 via-teal-50/70 to-sky-50 dark:from-obsidian-850 dark:via-[#122026] dark:to-[#111C26] border border-emerald-200/80 dark:border-emerald-500/15 shadow-soft-light dark:shadow-soft-dark flex flex-col justify-between">
+          <!-- Decorative subtle glow -->
+          <div class="pointer-events-none absolute -right-12 -top-12 w-44 h-44 rounded-full bg-emerald-400/15 dark:bg-emerald-400/10 blur-2xl"></div>
+
+          <div>
+            <!-- Top Pill Tags -->
+            <div class="flex items-center justify-between gap-2 flex-wrap mb-4">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span id="reflectionBadge1" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/90 dark:bg-obsidian-900/90 text-sky-700 dark:text-sky-300 border border-sky-200/80 dark:border-white/10 shadow-xs">
+                  <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
+                  <span>Refleksi Manajemen Waktu</span>
+                </span>
+                <span id="reflectionBadge2" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20">
+                  <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                  <span>Ritme Mahasiswa</span>
+                </span>
+              </div>
+
+              <!-- Slide Controls -->
+              <div class="flex items-center gap-1.5">
+                <button onclick="setReflectionSlide(0)" class="reflection-dot h-2 rounded-full transition-all bg-sky-500 w-6" aria-label="Slide 1"></button>
+                <button onclick="setReflectionSlide(1)" class="reflection-dot h-2 rounded-full transition-all bg-slate-400/40 w-2" aria-label="Slide 2"></button>
+                <button onclick="setReflectionSlide(2)" class="reflection-dot h-2 rounded-full transition-all bg-slate-400/40 w-2" aria-label="Slide 3"></button>
+              </div>
+            </div>
+
+            <!-- Editorial Serif Quote (Original Non-Copyrighted Wisdom) -->
+            <blockquote id="reflectionQuote" class="font-serif italic text-base sm:text-lg leading-relaxed text-slate-800 dark:text-slate-100 mb-4">
+              "Waktu kuliah adalah amanah yang terus berjalan; langkah kecil yang dikerjakan dengan hadir sepenuhnya jauh lebih bermakna daripada tergesa-gesa dalam cemas."
+            </blockquote>
+          </div>
+
+          <!-- Mindful Action Callout -->
+          <div class="flex items-start gap-3 p-3.5 rounded-2xl bg-white/75 dark:bg-obsidian-950/55 border border-slate-200/70 dark:border-white/[0.06]">
+            <div class="w-7 h-7 rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+              <i data-lucide="leaf" class="w-4 h-4"></i>
+            </div>
+            <p id="reflectionTip" class="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+              <strong class="font-semibold text-slate-800 dark:text-slate-100">Prinsip Tenang:</strong> Selesaikan satu prioritas utama dalam satu waktu tanpa membebani pikiran dengan tumpukan tugas sekaligus.
+            </p>
+          </div>
+        </div>
+
+        <!-- Daily Achievement Bento Card (5 cols on lg — elevated from bottom!) -->
+        <div class="lg:col-span-5 rounded-3xl p-5 sm:p-6 bg-white dark:bg-obsidian-850 border border-slate-200/80 dark:border-white/[0.07] shadow-soft-light dark:shadow-soft-dark flex flex-col justify-between">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400">
+                Evaluasi Harian
+              </span>
+              <h2 class="text-lg font-bold tracking-tight text-slate-900 dark:text-white mt-0.5">
+                Pencapaian Tugas
+              </h2>
+              <p id="progressMotivation" class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                Mulailah dari satu tugas Kuadran I. Langkah kecil meredakan cemas.
+              </p>
+            </div>
+
+            <!-- Radial Completion Ring -->
+            <div class="relative w-16 h-16 shrink-0 flex items-center justify-center">
+              <svg class="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
+                <circle cx="32" cy="32" r="26" stroke="currentColor" stroke-width="5.5" fill="none" class="text-slate-200 dark:text-obsidian-700" />
+                <circle id="dailyProgressRing" cx="32" cy="32" r="26" stroke="currentColor" stroke-width="5.5" stroke-linecap="round" fill="none"
+                  stroke-dasharray="163.36" stroke-dashoffset="163.36"
+                  class="text-emerald-500 dark:text-emerald-400 transition-all duration-500" />
+              </svg>
+              <span id="dailyProgressPercent" class="font-mono text-xs font-bold text-slate-800 dark:text-white tabular-nums">
+                0%
+              </span>
+            </div>
+          </div>
+
+          <!-- Quadrant Breakdown Pills + Focus Counter -->
+          <div class="mt-5 pt-4 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-2 flex-wrap">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span id="stat-q1" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-mono font-semibold bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20">
+                <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>KI: 0/1
+              </span>
+              <span id="stat-q2" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-mono font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>KII: 0/1
+              </span>
+              <span id="stat-q3" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-mono font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>KIII: 0/1
+              </span>
+              <span id="stat-q4" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-mono font-semibold bg-slate-500/10 text-slate-700 dark:text-slate-300 border border-slate-500/20">
+                <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>KIV: 0/1
+              </span>
+            </div>
+
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-mono font-medium bg-sky-500/10 text-sky-700 dark:text-sky-300">
+              <i data-lucide="flame" class="w-3.5 h-3.5"></i>
+              <span id="focusSessionBadge">0 sesi</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section Header & Unified Filter Bar -->
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-1">
+        <div>
+          <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            Matriks Prioritas Eisenhower
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+            Pilah tugas kuliah & organisasi berdasarkan tingkat kepentingan dan urgensi
+          </p>
+        </div>
+
+        <!-- Status & Quadrant Filter Pills -->
+        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+          <div class="inline-flex p-1 rounded-2xl bg-slate-200/75 dark:bg-obsidian-850 border border-slate-300/60 dark:border-white/[0.06]">
+            <button onclick="setStatusFilter('all')" data-status="all" class="status-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all">
+              Semua
+            </button>
+            <button onclick="setStatusFilter('active')" data-status="active" class="status-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all">
+              Aktif
+            </button>
+            <button onclick="setStatusFilter('done')" data-status="done" class="status-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all">
+              Selesai
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Quadrant Focus Bar (Allows zooming into a single quadrant or viewing all 4) -->
+      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar">
+        <button onclick="setQuadrantFilter('all')" data-qfilter="all" class="qfilter-btn shrink-0 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all">
+          Semua Kuadran (4)
+        </button>
+        <button onclick="setQuadrantFilter('1')" data-qfilter="1" class="qfilter-btn shrink-0 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+          <span>KI • Lakukan Segera</span>
+        </button>
+        <button onclick="setQuadrantFilter('2')" data-qfilter="2" class="qfilter-btn shrink-0 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span>KII • Jadwalkan</span>
+        </button>
+        <button onclick="setQuadrantFilter('3')" data-qfilter="3" class="qfilter-btn shrink-0 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+          <span>KIII • Batasi</span>
+        </button>
+        <button onclick="setQuadrantFilter('4')" data-qfilter="4" class="qfilter-btn shrink-0 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+          <span>KIV • Kurangi</span>
+        </button>
+      </div>
+
+      <!-- 2x2 Responsive Bento Matrix Grid -->
+      <div id="matrixGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+        <!-- Rendered dynamically via JS -->
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- VIEW 2: TIMER FOKUS POMODORO                                     -->
+    <!-- ================================================================ -->
+    <section id="view-fokus" class="hidden space-y-6">
+      <!-- Page Title Row -->
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            Timer Fokus Pomodoro
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+            Konsisten tanpa cemas • <span id="focusHeaderCount" class="font-mono font-semibold text-sky-600 dark:text-sky-400">0 sesi fokus</span> hari ini
+          </p>
+        </div>
+
+        <button onclick="testPomodoroChime()" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-obsidian-850 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-white/10 hover:border-sky-400/50 shadow-xs transition-all" title="Uji Suara Dering">
+          <i data-lucide="volume-2" class="w-4 h-4 text-sky-500"></i>
+          <span class="hidden sm:inline">Cek Dering</span>
+        </button>
+      </div>
+
+      <!-- Two-Column Zen Focus Studio on Desktop, Stacked on Mobile -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+
+        <!-- Left / Main Timer Card (7 cols) -->
+        <div class="lg:col-span-7 rounded-3xl p-6 sm:p-8 bg-white dark:bg-obsidian-850 border border-slate-200/80 dark:border-white/[0.07] shadow-soft-light dark:shadow-soft-dark flex flex-col items-center">
+
+          <!-- Mode Switcher (Focus vs Break) -->
+          <div class="w-full max-w-sm grid grid-cols-2 p-1.5 rounded-2xl bg-slate-100 dark:bg-obsidian-900 border border-slate-200/70 dark:border-white/[0.06] mb-5">
+            <button onclick="setPomodoroMode('focus')" id="modeFocusBtn" class="py-2.5 px-3 rounded-xl text-xs font-bold transition-all">
+              Sesi Fokus (<span id="focusLabelMins">25</span> mnt)
+            </button>
+            <button onclick="setPomodoroMode('break')" id="modeBreakBtn" class="py-2.5 px-3 rounded-xl text-xs font-bold transition-all">
+              Istirahat (5 mnt)
+            </button>
+          </div>
+
+          <!-- Duration Preset Chips -->
+          <div id="durationPresetsRow" class="flex items-center justify-center gap-2 mb-7 flex-wrap">
+            <span class="text-xs font-medium text-slate-400 mr-1">Durasi:</span>
+            <button onclick="setFocusDuration(15)" data-dur="15" class="dur-btn px-3.5 py-1.5 rounded-xl text-xs font-mono font-semibold border transition-all">
+              15 mnt
+            </button>
+            <button onclick="setFocusDuration(25)" data-dur="25" class="dur-btn px-3.5 py-1.5 rounded-xl text-xs font-mono font-semibold border transition-all">
+              25 mnt
+            </button>
+            <button onclick="setFocusDuration(45)" data-dur="45" class="dur-btn px-3.5 py-1.5 rounded-xl text-xs font-mono font-semibold border transition-all">
+              45 mnt
+            </button>
+          </div>
+
+          <!-- Circular Radial Timer Display -->
+          <div class="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center my-1">
+            <!-- Ambient Halo -->
+            <div id="timerAmbientGlow" class="absolute inset-4 rounded-full bg-sky-400/15 dark:bg-sky-400/10 blur-2xl transition-opacity duration-500 opacity-40"></div>
+
+            <svg class="w-full h-full -rotate-90" viewBox="0 0 260 260">
+              <!-- Track Ring -->
+              <circle cx="130" cy="130" r="112" stroke="currentColor" stroke-width="10" fill="none"
+                class="text-slate-100 dark:text-obsidian-900" />
+              <!-- Subtle Inner Border -->
+              <circle cx="130" cy="130" r="100" stroke="currentColor" stroke-width="1" fill="none"
+                class="text-slate-200/70 dark:text-white/[0.05]" />
+              <!-- Active Progress Ring -->
+              <circle id="timerProgressCircle" cx="130" cy="130" r="112" stroke="currentColor" stroke-width="10"
+                stroke-linecap="round" fill="none"
+                stroke-dasharray="703.72" stroke-dashoffset="0"
+                class="text-sky-500 dark:text-sky-400 transition-all duration-300" />
+            </svg>
+
+            <!-- Center Readout -->
+            <div class="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
+              <span id="timerPhaseBadge" class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20 mb-2">
+                SESI FOKUS
+              </span>
+              <div id="timerDisplay" class="font-mono text-5xl sm:text-6xl font-bold tracking-tight text-slate-900 dark:text-white tabular-nums">
+                25:00
+              </div>
+              <p id="timerStatusText" class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-2">
+                Siap dimulai
+              </p>
+            </div>
+          </div>
+
+          <!-- Primary Controls -->
+          <div class="w-full max-w-sm grid grid-cols-5 gap-3 mt-7">
+            <button onclick="resetTimer()" class="col-span-2 py-3.5 px-4 rounded-2xl text-sm font-semibold bg-slate-100 hover:bg-slate-200/80 dark:bg-obsidian-900 dark:hover:bg-obsidian-800 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-white/[0.08] flex items-center justify-center gap-2 transition-all active:scale-95">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+              <span>Reset</span>
+            </button>
+            <button onclick="toggleTimer()" id="timerToggleBtn" class="col-span-3 py-3.5 px-5 rounded-2xl text-sm font-bold bg-sky-600 hover:bg-sky-500 dark:bg-sky-400 dark:hover:bg-sky-300 text-white dark:text-obsidian-950 shadow-glow-sky flex items-center justify-center gap-2 transition-all active:scale-95">
+              <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+              <span>Mulai</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Column: Active Task Anchor & Focus Tips (5 cols) -->
+        <div class="lg:col-span-5 space-y-4">
+          <!-- Currently Working On Card -->
+          <div class="rounded-3xl p-5 sm:p-6 bg-white dark:bg-obsidian-850 border border-slate-200/80 dark:border-white/[0.07] shadow-soft-light dark:shadow-soft-dark">
+            <div class="flex items-center justify-between gap-2 mb-4">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Tugas yang Sedang Dikerjakan
+              </span>
+              <button onclick="openSelectFocusTaskModal()" class="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-600 dark:text-sky-400 hover:underline">
+                <i data-lucide="arrow-left-right" class="w-3.5 h-3.5"></i>
+                <span>Pilih Tugas</span>
+              </button>
+            </div>
+
+            <div id="activeFocusTaskContainer">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <!-- Calm Study Guidance Card -->
+          <div class="rounded-3xl p-5 bg-gradient-to-br from-slate-100 to-slate-50 dark:from-obsidian-850 dark:to-obsidian-900 border border-slate-200/70 dark:border-white/[0.06]">
+            <div class="flex items-start gap-3">
+              <div class="w-9 h-9 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                <i data-lucide="coffee" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h3 class="text-xs font-bold text-slate-800 dark:text-slate-100">
+                  Ritme Jeda Sadar (Mindful Break)
+                </h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mt-1">
+                  Setelah 1 sesi fokus selesai, jauhkan pandangan dari layar selama 5 menit, minum air putih, dan regangkan bahu sebelum lanjut.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- VIEW 3: JADWAL HARIAN (TIME-BLOCKING TIMELINE)                   -->
+    <!-- ================================================================ -->
+    <section id="view-jadwal" class="hidden space-y-5">
+      <!-- Header & Slot Summary -->
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+        <div>
+          <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            Jadwal Harian
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+            Petakan jam belajar, kuliah, dan istirahat dari pagi hingga malam
+          </p>
+        </div>
+
+        <div class="inline-flex items-center gap-2 self-start sm:self-auto px-3.5 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
+          <i data-lucide="calendar-check-2" class="w-4 h-4"></i>
+          <span id="scheduleSlotSummary" class="font-mono">5/16 slot terisi</span>
+        </div>
+      </div>
+
+      <!-- Quick Jump Time-of-Day Pills -->
+      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+        <button onclick="scrollToPeriod('period-pagi')" class="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-obsidian-850 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-white/[0.07] hover:border-sky-400/50 transition-all">
+          <i data-lucide="sunrise" class="w-3.5 h-3.5 text-amber-500"></i>
+          <span>Pagi (06–11)</span>
+        </button>
+        <button onclick="scrollToPeriod('period-siang')" class="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-obsidian-850 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-white/[0.07] hover:border-sky-400/50 transition-all">
+          <i data-lucide="sun" class="w-3.5 h-3.5 text-sky-500"></i>
+          <span>Siang (11–15)</span>
+        </button>
+        <button onclick="scrollToPeriod('period-sore')" class="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-obsidian-850 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-white/[0.07] hover:border-sky-400/50 transition-all">
+          <i data-lucide="sunset" class="w-3.5 h-3.5 text-orange-500"></i>
+          <span>Sore (15–18)</span>
+        </button>
+        <button onclick="scrollToPeriod('period-malam')" class="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-obsidian-850 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-white/[0.07] hover:border-sky-400/50 transition-all">
+          <i data-lucide="moon" class="w-3.5 h-3.5 text-indigo-400"></i>
+          <span>Malam (18–22)</span>
+        </button>
+      </div>
+
+      <!-- Structured Visual Timeline Container -->
+      <div id="scheduleTimelineContainer" class="space-y-6">
+        <!-- Rendered dynamically via JS -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== MOBILE FLOATING ACTION BUTTON & BOTTOM DOCK ==================== -->
+  <div class="md:hidden fixed bottom-0 inset-x-0 z-30 pointer-events-none">
+    <!-- Floating "+ Tugas Baru" Pill above dock (Shown cleanly on Matriks) -->
+    <div id="mobileFabWrapper" class="max-w-md mx-auto px-4 pb-3 flex justify-end">
+      <button onclick="openAddTaskModal()" class="pointer-events-auto inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl text-sm font-bold bg-sky-600 dark:bg-sky-400 text-white dark:text-obsidian-950 shadow-lg shadow-sky-950/25 active:scale-95 transition-all">
+        <i data-lucide="plus" class="w-5 h-5 stroke-[2.5]"></i>
+        <span>Tugas Baru</span>
+      </button>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <nav aria-label="Navigasi Bawah" class="pointer-events-auto glass-dock bg-white/90 dark:bg-obsidian-900/92 border-t border-slate-200/80 dark:border-white/[0.08] px-4 py-2">
+      <div class="max-w-md mx-auto grid grid-cols-3 gap-2">
+        <button onclick="switchTab('matriks')" data-nav="matriks" class="nav-btn-mobile flex flex-col items-center justify-center py-1.5 rounded-2xl transition-all">
+          <div class="nav-pill px-4 py-1 rounded-full transition-all mb-0.5">
+            <i data-lucide="layout-grid" class="w-5 h-5"></i>
+          </div>
+          <span class="text-[11px] font-semibold">Matriks</span>
+        </button>
+
+        <button onclick="switchTab('fokus')" data-nav="fokus" class="nav-btn-mobile flex flex-col items-center justify-center py-1.5 rounded-2xl transition-all">
+          <div class="nav-pill px-4 py-1 rounded-full transition-all mb-0.5">
+            <i data-lucide="timer" class="w-5 h-5"></i>
+          </div>
+          <span class="text-[11px] font-semibold">Fokus</span>
+        </button>
+
+        <button onclick="switchTab('jadwal')" data-nav="jadwal" class="nav-btn-mobile flex flex-col items-center justify-center py-1.5 rounded-2xl transition-all">
+          <div class="nav-pill px-4 py-1 rounded-full transition-all mb-0.5">
+            <i data-lucide="calendar-clock" class="w-5 h-5"></i>
+          </div>
+          <span class="text-[11px] font-semibold">Jadwal</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ================================================================== -->
+  <!-- MODAL 1: TAMBAH TUGAS BARU                                         -->
+  <!-- ================================================================== -->
+  <div id="addTaskModal" class="modal-backdrop modal-hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="modal-panel w-full max-w-lg bg-white dark:bg-obsidian-900 rounded-t-3xl sm:rounded-3xl border border-slate-200 dark:border-white/10 shadow-2xl max-h-[92vh] overflow-y-auto">
+      <!-- Drag Handle -->
+      <div class="w-10 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto mt-3 sm:hidden"></div>
+
+      <div class="p-6 space-y-5">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h3 class="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+              Tambah Tugas Baru
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Sistem otomatis mengklasifikasikan ke kuadran Matriks Eisenhower.
+            </p>
+          </div>
+          <button onclick="closeModal('addTaskModal')" class="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-obsidian-800">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <!-- Task Name -->
+        <div class="space-y-1.5">
+          <label for="inputTaskTitle" class="text-xs font-bold text-slate-700 dark:text-slate-300">Nama Tugas</label>
+          <input id="inputTaskTitle" type="text" placeholder="Contoh: Resume Bab 4 Sistem Operasi"
+            class="w-full px-4 py-3 rounded-2xl text-sm bg-slate-50 dark:bg-obsidian-850 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-sky-500 transition-colors" />
+        </div>
+
+        <!-- Course / Category -->
+        <div class="space-y-1.5">
+          <label for="inputTaskCourse" class="text-xs font-bold text-slate-700 dark:text-slate-300">Mata Kuliah / Kategori</label>
+          <input id="inputTaskCourse" type="text" placeholder="Contoh: Algoritma & Pemrograman"
+            class="w-full px-4 py-3 rounded-2xl text-sm bg-slate-50 dark:bg-obsidian-850 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-sky-500 transition-colors" />
+          <!-- Quick Course Chips -->
+          <div class="flex items-center gap-1.5 flex-wrap pt-1">
+            <button type="button" onclick="fillCourse('Algoritma & Pemrograman')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 dark:bg-obsidian-800 text-slate-600 dark:text-slate-300 hover:bg-sky-500/15 hover:text-sky-600 dark:hover:text-sky-300 transition-colors">Algoritma</button>
+            <button type="button" onclick="fillCourse('Pendidikan Agama Islam')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 dark:bg-obsidian-800 text-slate-600 dark:text-slate-300 hover:bg-sky-500/15 hover:text-sky-600 dark:hover:text-sky-300 transition-colors">PAI</button>
+            <button type="button" onclick="fillCourse('Organisasi Mahasiswa')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 dark:bg-obsidian-800 text-slate-600 dark:text-slate-300 hover:bg-sky-500/15 hover:text-sky-600 dark:hover:text-sky-300 transition-colors">Organisasi</button>
+            <button type="button" onclick="fillCourse('Pengembangan Diri')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 dark:bg-obsidian-800 text-slate-600 dark:text-slate-300 hover:bg-sky-500/15 hover:text-sky-600 dark:hover:text-sky-300 transition-colors">Pengembangan Diri</button>
+          </div>
+        </div>
+
+        <!-- Deadline Quick Chips & Inputs -->
+        <div class="space-y-2">
+          <label class="text-xs font-bold text-slate-700 dark:text-slate-300">Tenggat Waktu (Deadline)</label>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="setQuickDeadline(0)" class="deadline-chip px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-obsidian-850 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-white/10 hover:border-sky-400 transition-all">Hari Ini</button>
+            <button type="button" onclick="setQuickDeadline(1)" class="deadline-chip px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-obsidian-850 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-white/10 hover:border-sky-400 transition-all">Besok</button>
+            <button type="button" onclick="setQuickDeadline(3)" class="deadline-chip px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-obsidian-850 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-white/10 hover:border-sky-400 transition-all">+3 Hari</button>
+          </div>
+          <div class="grid grid-cols-5 gap-2 pt-1">
+            <input id="inputTaskDate" type="date" class="col-span-3 px-3.5 py-2.5 rounded-2xl text-xs font-mono bg-slate-50 dark:bg-obsidian-850 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-sky-500" />
+            <input id="inputTaskTime" type="time" value="23:59" class="col-span-2 px-3.5 py-2.5 rounded-2xl text-xs font-mono bg-slate-50 dark:bg-obsidian-850 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-sky-500" />
+          </div>
+        </div>
+
+        <!-- Importance Toggle -->
+        <div class="space-y-2">
+          <span class="text-xs font-bold text-slate-700 dark:text-slate-300 block">Tingkat Kepentingan</span>
+          <div class="grid grid-cols-2 gap-2.5">
+            <button type="button" onclick="setTaskImportance(true)" id="btnImportantTrue" class="py-3 px-4 rounded-2xl text-xs font-bold border flex items-center justify-center gap-2 transition-all">
+              <i data-lucide="check" class="w-4 h-4"></i>
+              <span>Penting</span>
+            </button>
+            <button type="button" onclick="setTaskImportance(false)" id="btnImportantFalse" class="py-3 px-4 rounded-2xl text-xs font-bold border flex items-center justify-center gap-2 transition-all">
+              <span>Tidak Penting</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Urgency Toggle -->
+        <div class="space-y-2">
+          <span class="text-xs font-bold text-slate-700 dark:text-slate-300 block">Tingkat Urgensi</span>
+          <div class="grid grid-cols-2 gap-2.5">
+            <button type="button" onclick="setTaskUrgency(true)" id="btnUrgentTrue" class="py-3 px-4 rounded-2xl text-xs font-bold border flex items-center justify-center gap-2 transition-all">
+              <i data-lucide="check" class="w-4 h-4"></i>
+              <span>Mendesak</span>
+            </button>
+            <button type="button" onclick="setTaskUrgency(false)" id="btnUrgentFalse" class="py-3 px-4 rounded-2xl text-xs font-bold border flex items-center justify-center gap-2 transition-all">
+              <span>Tidak Mendesak</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Live Auto-Classification Banner -->
+        <div id="autoClassifyBanner" class="p-4 rounded-2xl border flex items-start gap-3 transition-all">
+          <div id="autoClassifyIcon" class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0">
+            <i data-lucide="sparkles" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <p id="autoClassifyTitle" class="text-xs font-bold">
+              Klasifikasi Otomatis: Kuadran I (Penting & Mendesak)
+            </p>
+            <p id="autoClassifyDesc" class="text-[11px] opacity-85 mt-0.5">
+              Lakukan Segera • Deadline dekat, ujian besok, atau tugas krusial
+            </p>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="grid grid-cols-5 gap-3 pt-2">
+          <button type="button" onclick="closeModal('addTaskModal')" class="col-span-2 py-3.5 rounded-2xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-obsidian-850 transition-colors">
+            Batal
+          </button>
+          <button type="button" onclick="saveNewTask()" class="col-span-3 py-3.5 rounded-2xl text-xs font-bold bg-sky-600 hover:bg-sky-500 dark:bg-sky-400 dark:hover:bg-sky-300 text-white dark:text-obsidian-950 shadow-sm transition-all active:scale-95">
+            Simpan ke Matriks
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================== -->
+  <!-- MODAL 2: PILIH TUGAS FOKUS / JADWALKAN SLOT                        -->
+  <!-- ================================================================== -->
+  <div id="pickerModal" class="modal-backdrop modal-hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="modal-panel w-full max-w-md bg-white dark:bg-obsidian-900 rounded-t-3xl sm:rounded-3xl border border-slate-200 dark:border-white/10 shadow-2xl max-h-[85vh] overflow-y-auto">
+      <div class="w-10 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto mt-3 sm:hidden"></div>
+      <div class="p-6 space-y-4">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h3 id="pickerModalTitle" class="text-lg font-extrabold text-slate-900 dark:text-white">Pilih Tugas</h3>
+            <p id="pickerModalSubtitle" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Pilih dari daftar tugas aktif Anda</p>
+          </div>
+          <button onclick="closeModal('pickerModal')" class="p-2 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-obsidian-800">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <!-- Optional Custom Activity Input (Shown when scheduling an empty hour slot) -->
+        <div id="customSlotInputBox" class="hidden space-y-2 pb-3 border-b border-slate-200/70 dark:border-white/10">
+          <label class="text-xs font-bold text-slate-700 dark:text-slate-300">Atau Tulis Aktivitas / Rutinitas Baru</label>
+          <div class="flex gap-2">
+            <input id="customSlotTitle" type="text" placeholder="Contoh: Istirahat & Shalat Dzuhur"
+              class="flex-1 px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 dark:bg-obsidian-850 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500" />
+            <button onclick="confirmCustomSlotActivity()" class="px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 dark:bg-emerald-500 text-white dark:text-obsidian-950 shrink-0">
+              Pasang
+            </button>
+          </div>
+        </div>
+
+        <div id="pickerListContainer" class="space-y-2.5">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================== -->
+  <!-- MODAL 3: PENGATURAN TAMPILAN & APLIKASI                            -->
+  <!-- ================================================================== -->
+  <div id="settingsModal" class="modal-backdrop modal-hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="modal-panel w-full max-w-md bg-white dark:bg-obsidian-900 rounded-t-3xl sm:rounded-3xl border border-slate-200 dark:border-white/10 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div class="w-10 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto mt-3 sm:hidden"></div>
+      <div class="p-6 space-y-5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-sky-500/15 text-sky-600 dark:text-sky-400 flex items-center justify-center">
+              <i data-lucide="palette" class="w-5 h-5"></i>
+            </div>
+            <h3 class="text-lg font-extrabold text-slate-900 dark:text-white">
+              Pengaturan Tampilan & Aplikasi
+            </h3>
+          </div>
+          <button onclick="closeModal('settingsModal')" class="p-2 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-obsidian-800">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <!-- Theme Selector -->
+        <div class="space-y-2.5">
+          <span class="text-xs font-bold text-sky-600 dark:text-sky-400 block">Pilih Tema Tampilan</span>
+
+          <button onclick="setTheme('light')" data-theme-opt="light" class="theme-opt-btn w-full p-3.5 rounded-2xl border text-left flex items-center justify-between transition-all">
+            <div class="flex items-center gap-3.5">
+              <div class="theme-icon w-10 h-10 rounded-full flex items-center justify-center">
+                <i data-lucide="sun" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <p class="text-sm font-bold text-slate-900 dark:text-white">Light Mode</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Tampilan cerah, bersih & menenangkan</p>
+              </div>
+            </div>
+            <i data-lucide="check" class="theme-check w-5 h-5 text-sky-500 hidden"></i>
+          </button>
+
+          <button onclick="setTheme('dark')" data-theme-opt="dark" class="theme-opt-btn w-full p-3.5 rounded-2xl border text-left flex items-center justify-between transition-all">
+            <div class="flex items-center gap-3.5">
+              <div class="theme-icon w-10 h-10 rounded-full flex items-center justify-center">
+                <i data-lucide="moon" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <p class="text-sm font-bold text-slate-900 dark:text-white">Dark Mode</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Nyaman di mata saat malam atau minim cahaya</p>
+              </div>
+            </div>
+            <i data-lucide="check" class="theme-check w-5 h-5 text-sky-400 hidden"></i>
+          </button>
+
+          <button onclick="setTheme('system')" data-theme-opt="system" class="theme-opt-btn w-full p-3.5 rounded-2xl border text-left flex items-center justify-between transition-all">
+            <div class="flex items-center gap-3.5">
+              <div class="theme-icon w-10 h-10 rounded-full flex items-center justify-center">
+                <i data-lucide="monitor-smartphone" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <p class="text-sm font-bold text-slate-900 dark:text-white">Ikuti Sistem</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Otomatis menyesuaikan tema perangkat</p>
+              </div>
+            </div>
+            <i data-lucide="check" class="theme-check w-5 h-5 text-sky-400 hidden"></i>
+          </button>
+        </div>
+
+        <!-- Sound & Notification Toggles -->
+        <div class="pt-3 border-t border-slate-200/70 dark:border-white/10 space-y-3">
+          <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-obsidian-850 border border-slate-200/70 dark:border-white/[0.06] flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <i data-lucide="volume-2" class="w-5 h-5 text-sky-500 shrink-0"></i>
+              <div>
+                <p class="text-sm font-bold text-slate-900 dark:text-white">Dering Panjang Pomodoro</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Bunyikan dering lembut saat waktu fokus habis</p>
+              </div>
+            </div>
+            <button onclick="toggleSoundSetting()" id="soundSwitchBtn" role="switch" aria-checked="true" class="w-12 h-7 rounded-full p-1 transition-colors bg-sky-500 shrink-0">
+              <div id="soundSwitchKnob" class="w-5 h-5 rounded-full bg-white shadow-sm transition-transform translate-x-5"></div>
+            </button>
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-obsidian-850 border border-slate-200/70 dark:border-white/[0.06] flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <i data-lucide="bell-ring" class="w-5 h-5 text-emerald-500 shrink-0"></i>
+              <div>
+                <p class="text-sm font-bold text-slate-900 dark:text-white">Pengingat Visual</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Aktif — notifikasi banner & deadline siap tampil</p>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-300">Aktif</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================== -->
+  <!-- MODAL 4: INFO & FILOSOFI APLIKASI                                  -->
+  <!-- ================================================================== -->
+  <div id="infoModal" class="modal-backdrop modal-hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="modal-panel w-full max-w-md bg-white dark:bg-obsidian-900 rounded-t-3xl sm:rounded-3xl border border-slate-200 dark:border-white/10 shadow-2xl p-6 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-extrabold text-slate-900 dark:text-white">Tentang TaskFlow Mahasiswa</h3>
+        <button onclick="closeModal('infoModal')" class="p-2 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-obsidian-800">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <p class="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+        Dirancang khusus untuk membantu mahasiswa mengelola beban akademik dan organisasi dengan prinsip <strong>Tenang, Terstruktur, dan Amanah</strong>:
+      </p>
+      <div class="space-y-2.5 text-xs">
+        <div class="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20">
+          <p class="font-bold text-rose-700 dark:text-rose-300">1. Matriks Prioritas Eisenhower</p>
+          <p class="text-slate-600 dark:text-slate-300 mt-0.5">Membedakan tugas yang benar-benar krusial dari sekadar kesibukan mendadak.</p>
+        </div>
+        <div class="p-3.5 rounded-2xl bg-sky-500/10 border border-sky-500/20">
+          <p class="font-bold text-sky-700 dark:text-sky-300">2. Timer Fokus Pomodoro</p>
+          <p class="text-slate-600 dark:text-slate-300 mt-0.5">Bekerja dalam blok waktu terukur dengan jeda istirahat sadar agar terhindar dari burnout.</p>
+        </div>
+        <div class="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+          <p class="font-bold text-emerald-700 dark:text-emerald-300">3. Pemetaan Jadwal Harian</p>
+          <p class="text-slate-600 dark:text-slate-300 mt-0.5">Memberi rumah waktu yang jelas bagi setiap tugas dari pagi hingga malam.</p>
+        </div>
+      </div>
+      <button onclick="closeModal('infoModal')" class="w-full py-3 rounded-2xl text-xs font-bold bg-slate-900 dark:bg-white text-white dark:text-obsidian-950">
+        Mengerti
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== TOAST NOTIFICATION ==================== -->
+  <div id="toastContainer" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center gap-2 w-full max-w-sm px-4"></div>
+
+  <!-- ==================== JAVASCRIPT APPLICATION LOGIC ==================== -->
+  <script>
+    // ---------------------------------------------------------
+    // 1. INITIAL STATE & DATA (Original Student Content)
+    // ---------------------------------------------------------
+    const reflections = [
+      {
+        badge1: 'Refleksi Manajemen Waktu',
+        badge2: 'Ritme Mahasiswa',
+        quote: '"Waktu kuliah adalah amanah yang terus berjalan; langkah kecil yang dikerjakan dengan hadir sepenuhnya jauh lebih bermakna daripada tergesa-gesa dalam cemas."',
+        tip: 'Selesaikan satu prioritas utama dalam satu waktu tanpa membebani pikiran dengan tumpukan tugas sekaligus.'
+      },
+      {
+        badge1: 'Keseimbangan Belajar',
+        badge2: 'Fokus Mendalam',
+        quote: '"Ketekunan mengalahkan intensitas sesaat. Dua sesi fokus yang tenang hari ini jauh lebih menenangkan daripada begadang mengejar tenggat di menit akhir."',
+        tip: 'Gunakan Kuadran II untuk mencicil makalah dan riset sebelum berubah menjadi tekanan di Kuadran I.'
+      },
+      {
+        badge1: 'Kendali Diri & Jeda',
+        badge2: 'Kesehatan Mental',
+        quote: '"Istirahat yang dijadwalkan dengan sadar adalah bagian dari produktivitas, bukan bentuk kemalasan."',
+        tip: 'Batasi gangguan notifikasi grup dan sisihkan waktu malam untuk evaluasi ringan serta tidur cukup.'
+      }
+    ];
+
+    const quadrantMeta = {
+      1: {
+        num: 'Kuadran I',
+        title: 'Penting & Mendesak',
+        subtitle: 'Lakukan Segera — Deadline dekat, ujian besok, atau tugas krusial',
+        dot: 'bg-rose-500',
+        border: 'border-rose-300/70 dark:border-rose-500/25',
+        bg: 'bg-rose-50/55 dark:bg-[#1E1418]',
+        badge: 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/25',
+        accentText: 'text-rose-700 dark:text-rose-300'
+      },
+      2: {
+        num: 'Kuadran II',
+        title: 'Penting & Tidak Mendesak',
+        subtitle: 'Jadwalkan — Tugas jangka panjang, belajar rutin, olahraga',
+        dot: 'bg-emerald-500',
+        border: 'border-emerald-300/70 dark:border-emerald-500/25',
+        bg: 'bg-emerald-50/55 dark:bg-[#111E1A]',
+        badge: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/25',
+        accentText: 'text-emerald-700 dark:text-emerald-300'
+      },
+      3: {
+        num: 'Kuadran III',
+        title: 'Tidak Penting & Mendesak',
+        subtitle: 'Batasi / Delegasikan — Pesan masuk beruntun atau gangguan mendadak',
+        dot: 'bg-amber-500',
+        border: 'border-amber-300/70 dark:border-amber-500/25',
+        bg: 'bg-amber-50/55 dark:bg-[#1E1A12]',
+        badge: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/25',
+        accentText: 'text-amber-700 dark:text-amber-300'
+      },
+      4: {
+        num: 'Kuadran IV',
+        title: 'Tidak Penting & Tidak Mendesak',
+        subtitle: 'Kurangi — Media sosial berlebihan atau hiburan berlarut-larut',
+        dot: 'bg-slate-400',
+        border: 'border-slate-300/80 dark:border-white/[0.08]',
+        bg: 'bg-slate-100/70 dark:bg-obsidian-850',
+        badge: 'bg-slate-500/15 text-slate-700 dark:text-slate-300 border-slate-500/20',
+        accentText: 'text-slate-700 dark:text-slate-300'
+      }
+    };
+
+    let state = {
+      activeTab: 'matriks',
+      statusFilter: 'all',
+      quadrantFilter: 'all',
+      reflectionIdx: 0,
+      theme: 'dark',
+      soundEnabled: true,
+      focusSessionsToday: 0,
+      activeFocusTaskId: 't1',
+      tasks: [
+        {
+          id: 't1',
+          title: 'Laporan Praktikum Algoritma',
+          course: 'Algoritma & Pemrograman',
+          deadlineLabel: 'Besok, 23:59',
+          quadrant: 1,
+          completed: false
+        },
+        {
+          id: 't2',
+          title: 'Cicil Makalah Pendidikan Agama Islam',
+          course: 'Pendidikan Agama Islam',
+          deadlineLabel: '26 Nov, 17:00',
+          quadrant: 2,
+          completed: false
+        },
+        {
+          id: 't3',
+          title: 'Balas Chat Grup Kepanitiaan',
+          course: 'Organisasi Mahasiswa',
+          deadlineLabel: 'Hari Ini, 20:00',
+          quadrant: 3,
+          completed: false
+        },
+        {
+          id: 't4',
+          title: 'Kurangi Scrolling Media Sosial',
+          course: 'Pengendalian Diri',
+          deadlineLabel: 'Hari Ini, 22:00',
+          quadrant: 4,
+          completed: false
+        }
+      ],
+      schedule: {
+        '07:00': { title: 'Persiapan Kuliah & Sarapan Tenang', meta: 'Rutinitas Pagi', color: 'emerald', completed: true },
+        '09:00': { title: 'Laporan Praktikum Algoritma', meta: 'Algoritma & Pemrograman • Sesi Fokus', color: 'rose', completed: false, taskId: 't1' },
+        '13:00': { title: 'Cicil Makalah Pendidikan Agama Islam', meta: 'Pendidikan Agama Islam • Riset & Kerangka', color: 'emerald', completed: false, taskId: 't2' },
+        '16:00': { title: 'Balas Chat Grup Kepanitiaan', meta: 'Dibatasi 20 menit agar tidak mengganggu fokus', color: 'amber', completed: false, taskId: 't3' },
+        '19:00': { title: 'Review Materi & Istirahat Terjadwal', meta: 'Jaga Kesehatan Mental & Keseimbangan', color: 'emerald', completed: false }
+      }
+    };
+
+    // Form state for Add Task Modal
+    let newTaskForm = {
+      important: true,
+      urgent: true
+    };
+
+    // Picker state (either selecting a focus task OR scheduling a time slot)
+    let pickerContext = {
+      mode: 'focus', // 'focus' | 'slot' | 'scheduleTask'
+      targetHour: null,
+      targetTaskId: null
+    };
+
+    // Pomodoro Timer State
+    let timerState = {
+      mode: 'focus', // 'focus' | 'break'
+      focusMinutes: 25,
+      breakMinutes: 5,
+      remainingSeconds: 25 * 60,
+      totalSeconds: 25 * 60,
+      isRunning: false,
+      intervalId: null
+    };
+
+    // ---------------------------------------------------------
+    // 2. THEME & INITIALIZATION
+    // ---------------------------------------------------------
+    function applyTheme(themePref) {
+      state.theme = themePref;
+      const html = document.documentElement;
+      const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const shouldDark = themePref === 'dark' || (themePref === 'system' && isSystemDark);
+
+      if (shouldDark) {
+        html.classList.add('dark');
+      } else {
+        html.classList.remove('dark');
+      }
+
+      // Update Settings Modal Visuals
+      document.querySelectorAll('.theme-opt-btn').forEach(btn => {
+        const opt = btn.getAttribute('data-theme-opt');
+        const check = btn.querySelector('.theme-check');
+        const iconWrap = btn.querySelector('.theme-icon');
+        if (opt === themePref) {
+          btn.className = 'theme-opt-btn w-full p-3.5 rounded-2xl border-2 border-sky-500 bg-sky-500/10 text-left flex items-center justify-between transition-all';
+          iconWrap.className = 'theme-icon w-10 h-10 rounded-full flex items-center justify-center bg-sky-500 text-white dark:bg-sky-400 dark:text-obsidian-950';
+          check.classList.remove('hidden');
+        } else {
+          btn.className = 'theme-opt-btn w-full p-3.5 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-obsidian-850 text-left flex items-center justify-between transition-all hover:border-slate-300 dark:hover:border-white/20';
+          iconWrap.className = 'theme-icon w-10 h-10 rounded-full flex items-center justify-center bg-slate-200/80 dark:bg-obsidian-800 text-slate-600 dark:text-slate-300';
+          check.classList.add('hidden');
+        }
+      });
+    }
+
+    function setTheme(themePref) {
+      applyTheme(themePref);
+      showToast(`Tema diubah ke ${themePref === 'light' ? 'Light Mode' : themePref === 'dark' ? 'Dark Mode' : 'Ikuti Sistem'}`);
+    }
+
+    function toggleSoundSetting() {
+      state.soundEnabled = !state.soundEnabled;
+      const btn = document.getElementById('soundSwitchBtn');
+      const knob = document.getElementById('soundSwitchKnob');
+      btn.setAttribute('aria-checked', state.soundEnabled);
+      if (state.soundEnabled) {
+        btn.classList.remove('bg-slate-300', 'dark:bg-slate-700');
+        btn.classList.add('bg-sky-500');
+        knob.classList.add('translate-x-5');
+        testPomodoroChime();
+      } else {
+        btn.classList.add('bg-slate-300', 'dark:bg-slate-700');
+        btn.classList.remove('bg-sky-500');
+        knob.classList.remove('translate-x-5');
+      }
+    }
+
+    // ---------------------------------------------------------
+    // 3. NAVIGATION TABS
+    // ---------------------------------------------------------
+    function switchTab(tabName) {
+      state.activeTab = tabName;
+
+      // Toggle views
+      ['matriks', 'fokus', 'jadwal'].forEach(t => {
+        const el = document.getElementById(`view-${t}`);
+        if (t === tabName) {
+          el.classList.remove('hidden');
+        } else {
+          el.classList.add('hidden');
+        }
+      });
+
+      // Mobile FAB visibility (cleanest on Matriks)
+      const fabWrap = document.getElementById('mobileFabWrapper');
+      if (tabName === 'matriks') {
+        fabWrap.classList.remove('hidden');
+      } else {
+        fabWrap.classList.add('hidden');
+      }
+
+      // Desktop Nav Styling
+      document.querySelectorAll('.nav-btn-desktop').forEach(btn => {
+        const isTarget = btn.getAttribute('data-nav') === tabName;
+        if (isTarget) {
+          btn.className = 'nav-btn-desktop px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all bg-white dark:bg-obsidian-900 text-sky-600 dark:text-sky-400 shadow-xs';
+        } else {
+          btn.className = 'nav-btn-desktop px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white';
+        }
+      });
+
+      // Mobile Bottom Nav Styling
+      document.querySelectorAll('.nav-btn-mobile').forEach(btn => {
+        const isTarget = btn.getAttribute('data-nav') === tabName;
+        const pill = btn.querySelector('.nav-pill');
+        if (isTarget) {
+          btn.className = 'nav-btn-mobile flex flex-col items-center justify-center py-1.5 rounded-2xl transition-all text-emerald-700 dark:text-emerald-300';
+          pill.className = 'nav-pill px-4 py-1 rounded-full transition-all mb-0.5 bg-emerald-500/15 dark:bg-emerald-400/15';
+        } else {
+          btn.className = 'nav-btn-mobile flex flex-col items-center justify-center py-1.5 rounded-2xl transition-all text-slate-500 dark:text-slate-400';
+          pill.className = 'nav-pill px-4 py-1 rounded-full transition-all mb-0.5';
+        }
+      });
+
+      lucide.createIcons();
+    }
+
+    // ---------------------------------------------------------
+    // 4. REFLECTION CAROUSEL
+    // ---------------------------------------------------------
+    function setReflectionSlide(idx) {
+      state.reflectionIdx = idx;
+      const item = reflections[idx];
+      document.getElementById('reflectionBadge1').innerHTML = `<i data-lucide="book-open" class="w-3.5 h-3.5"></i><span>${item.badge1}</span>`;
+      document.getElementById('reflectionBadge2').innerHTML = `<i data-lucide="sparkles" class="w-3.5 h-3.5"></i><span>${item.badge2}</span>`;
+      document.getElementById('reflectionQuote').textContent = item.quote;
+      document.getElementById('reflectionTip').innerHTML = `<strong class="font-semibold text-slate-800 dark:text-slate-100">Prinsip Tenang:</strong> ${item.tip}`;
+
+      document.querySelectorAll('.reflection-dot').forEach((dot, i) => {
+        if (i === idx) {
+          dot.className = 'reflection-dot h-2 rounded-full transition-all bg-sky-500 w-6';
+        } else {
+          dot.className = 'reflection-dot h-2 rounded-full transition-all bg-slate-400/40 w-2';
+        }
+      });
+      lucide.createIcons();
+    }
+
+    // ---------------------------------------------------------
+    // 5. EISENHOWER MATRIX RENDERING & ACTIONS
+    // ---------------------------------------------------------
+    function setStatusFilter(status) {
+      state.statusFilter = status;
+      updateFilterPills();
+      renderMatrix();
+    }
+
+    function setQuadrantFilter(q) {
+      state.quadrantFilter = q;
+      updateFilterPills();
+      renderMatrix();
+    }
+
+    function updateFilterPills() {
+      document.querySelectorAll('.status-filter-btn').forEach(btn => {
+        const active = btn.getAttribute('data-status') === state.statusFilter;
+        btn.className = active
+          ? 'status-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all bg-sky-600 dark:bg-sky-400 text-white dark:text-obsidian-950 shadow-xs'
+          : 'status-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white';
+      });
+
+      document.querySelectorAll('.qfilter-btn').forEach(btn => {
+        const active = btn.getAttribute('data-qfilter') === state.quadrantFilter;
+        btn.className = active
+          ? 'qfilter-btn shrink-0 px-3.5 py-2 rounded-xl text-xs font-bold border border-sky-500/40 bg-sky-500/12 text-sky-700 dark:text-sky-300 transition-all flex items-center gap-1.5'
+          : 'qfilter-btn shrink-0 px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-200/80 dark:border-white/[0.07] bg-white dark:bg-obsidian-850 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-white/20 transition-all flex items-center gap-1.5';
+      });
+    }
+
+    function updateStats() {
+      const total = state.tasks.length;
+      const done = state.tasks.filter(t => t.completed).length;
+      const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+
+      // Update radial progress ring (circumference = 163.36)
+      const ring = document.getElementById('dailyProgressRing');
+      const offset = 163.36 - (pct / 100) * 163.36;
+      ring.style.strokeDashoffset = offset;
+      document.getElementById('dailyProgressPercent').textContent = `${pct}%`;
+
+      // Update quadrant mini counters
+      [1, 2, 3, 4].forEach(q => {
+        const qTasks = state.tasks.filter(t => t.quadrant === q);
+        const qDone = qTasks.filter(t => t.completed).length;
+        const roman = ['KI', 'KII', 'KIII', 'KIV'][q - 1];
+        const el = document.getElementById(`stat-q${q}`);
+        const dotColor = ['bg-rose-500', 'bg-emerald-500', 'bg-amber-500', 'bg-slate-400'][q - 1];
+        el.innerHTML = `<span class="w-1.5 h-1.5 rounded-full ${dotColor}"></span>${roman}: ${qDone}/${qTasks.length}`;
+      });
+
+      // Motivation text
+      const motEl = document.getElementById('progressMotivation');
+      if (pct === 100 && total > 0) {
+        motEl.textContent = 'Alhamdulillah, semua tugas hari ini selesai! Saatnya beristirahat dengan tenang.';
+      } else if (done > 0) {
+        motEl.textContent = `${done} dari ${total} tugas tuntas. Pertahankan ritme tenang dan terukur.`;
+      } else {
+        motEl.textContent = 'Mulailah dari satu tugas Kuadran I. Langkah kecil meredakan cemas.';
+      }
+
+      document.getElementById('focusSessionBadge').textContent = `${state.focusSessionsToday} sesi`;
+      document.getElementById('focusHeaderCount').textContent = `${state.focusSessionsToday} sesi fokus`;
+    }
+
+    function renderMatrix() {
+      const grid = document.getElementById('matrixGrid');
+      const quadrantsToShow = state.quadrantFilter === 'all' ? [1, 2, 3, 4] : [Number(state.quadrantFilter)];
+
+      if (quadrantsToShow.length === 1) {
+        grid.className = 'grid grid-cols-1 gap-4 sm:gap-5';
+      } else {
+        grid.className = 'grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5';
+      }
+
+      grid.innerHTML = quadrantsToShow.map(q => {
+        const meta = quadrantMeta[q];
+        let qTasks = state.tasks.filter(t => t.quadrant === q);
+        if (state.statusFilter === 'active') qTasks = qTasks.filter(t => !t.completed);
+        if (state.statusFilter === 'done') qTasks = qTasks.filter(t => t.completed);
+
+        const taskCardsHtml = qTasks.length === 0
+          ? `<div class="py-7 px-4 rounded-2xl border border-dashed border-slate-300/80 dark:border-white/10 text-center">
+               <p class="text-xs text-slate-400 dark:text-slate-500">Tidak ada tugas pada filter ini</p>
+             </div>`
+          : qTasks.map(task => {
+              const isSelectedForFocus = state.activeFocusTaskId === task.id;
+              return `
+                <div class="group p-4 rounded-2xl bg-white/95 dark:bg-obsidian-900/90 border ${isSelectedForFocus ? 'border-sky-500/60 ring-1 ring-sky-500/20' : 'border-slate-200/80 dark:border-white/[0.07]'} shadow-xs transition-all">
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="flex items-start gap-3 min-w-0">
+                      <button onclick="toggleTaskComplete('${task.id}')" aria-label="Tandai Selesai"
+                        class="mt-0.5 w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${task.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 dark:border-slate-600 hover:border-sky-400'}">
+                        ${task.completed ? '<i data-lucide="check" class="w-3.5 h-3.5 stroke-[3]"></i>' : ''}
+                      </button>
+                      <div class="min-w-0">
+                        <h4 class="text-sm font-bold leading-snug ${task.completed ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'}">
+                          ${escapeHtml(task.title)}
+                        </h4>
+                        <div class="flex items-center gap-2 flex-wrap mt-2">
+                          <span class="px-2.5 py-0.5 rounded-lg text-[11px] font-medium bg-slate-100 dark:bg-obsidian-800 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-white/[0.06]">
+                            ${escapeHtml(task.course)}
+                          </span>
+                          <span class="inline-flex items-center gap-1 text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                            <i data-lucide="clock" class="w-3 h-3"></i>
+                            ${escapeHtml(task.deadlineLabel)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button onclick="deleteTask('${task.id}')" aria-label="Hapus Tugas"
+                      class="p-1.5 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors shrink-0">
+                      <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                  </div>
+
+                  <!-- Action Buttons Row -->
+                  <div class="grid grid-cols-2 gap-2.5 mt-3.5 pt-3 border-t border-slate-100 dark:border-white/[0.05]">
+                    <button onclick="startFocusOnTask('${task.id}')"
+                      class="py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${isSelectedForFocus
+                        ? 'bg-sky-600 dark:bg-sky-400 text-white dark:text-obsidian-950 shadow-xs'
+                        : 'bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 dark:text-sky-300 border border-sky-500/20'}">
+                      <i data-lucide="play-circle" class="w-3.5 h-3.5"></i>
+                      <span>${isSelectedForFocus ? 'Sedang Dipilih' : 'Sesi Fokus'}</span>
+                    </button>
+
+                    <button onclick="openScheduleForTask('${task.id}')"
+                      class="py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 transition-all">
+                      <i data-lucide="calendar-plus" class="w-3.5 h-3.5"></i>
+                      <span>Jadwalkan</span>
+                    </button>
+                  </div>
+                </div>
+              `;
+            }).join('');
+
+        return `
+          <div class="rounded-3xl p-4 sm:p-5 border ${meta.border} ${meta.bg} flex flex-col justify-between gap-4 transition-all">
+            <!-- Quadrant Header -->
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex items-start gap-2.5">
+                <span class="w-2.5 h-2.5 rounded-full ${meta.dot} mt-1.5 shrink-0"></span>
+                <div>
+                  <h3 class="text-sm sm:text-base font-extrabold tracking-tight ${meta.accentText}">
+                    ${meta.num} • ${meta.title}
+                  </h3>
+                  <p class="text-xs text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
+                    ${meta.subtitle}
+                  </p>
+                </div>
+              </div>
+              <span class="w-7 h-7 rounded-full border ${meta.badge} font-mono text-xs font-bold flex items-center justify-center shrink-0">
+                ${qTasks.length}
+              </span>
+            </div>
+
+            <!-- Tasks List -->
+            <div class="space-y-3">
+              ${taskCardsHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      updateStats();
+      renderActiveFocusTaskCard();
+      lucide.createIcons();
+    }
+
+    function toggleTaskComplete(id) {
+      const task = state.tasks.find(t => t.id === id);
+      if (!task) return;
+      task.completed = !task.completed;
+      renderMatrix();
+      showToast(task.completed ? `Selesai: "${task.title}"` : `Tugas dibuka kembali`);
+    }
+
+    function deleteTask(id) {
+      state.tasks = state.tasks.filter(t => t.id !== id);
+      if (state.activeFocusTaskId === id) {
+        state.activeFocusTaskId = state.tasks[0]?.id || null;
+      }
+      renderMatrix();
+      showToast('Tugas dihapus dari matriks');
+    }
+
+    // ---------------------------------------------------------
+    // 6. ADD TASK MODAL & AUTO-CLASSIFICATION
+    // ---------------------------------------------------------
+    function openAddTaskModal() {
+      document.getElementById('inputTaskTitle').value = '';
+      document.getElementById('inputTaskCourse').value = '';
+      setQuickDeadline(1);
+      setTaskImportance(true);
+      setTaskUrgency(true);
+      openModal('addTaskModal');
+      setTimeout(() => document.getElementById('inputTaskTitle').focus(), 200);
+    }
+
+    function fillCourse(name) {
+      document.getElementById('inputTaskCourse').value = name;
+    }
+
+    function setQuickDeadline(daysOffset) {
+      const d = new Date();
+      d.setDate(d.getDate() + daysOffset);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      document.getElementById('inputTaskDate').value = `${yyyy}-${mm}-${dd}`;
+    }
+
+    function setTaskImportance(val) {
+      newTaskForm.important = val;
+      updateClassificationPreview();
+    }
+
+    function setTaskUrgency(val) {
+      newTaskForm.urgent = val;
+      updateClassificationPreview();
+    }
+
+    function getComputedQuadrant() {
+      if (newTaskForm.important && newTaskForm.urgent) return 1;
+      if (newTaskForm.important && !newTaskForm.urgent) return 2;
+      if (!newTaskForm.important && newTaskForm.urgent) return 3;
+      return 4;
+    }
+
+    function updateClassificationPreview() {
+      const activeStyle = 'py-3 px-4 rounded-2xl text-xs font-bold border-2 border-sky-500 bg-sky-500/12 text-sky-700 dark:text-sky-300 flex items-center justify-center gap-2 transition-all';
+      const inactiveStyle = 'py-3 px-4 rounded-2xl text-xs font-semibold border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-obsidian-850 text-slate-600 dark:text-slate-400 flex items-center justify-center gap-2 transition-all';
+
+      document.getElementById('btnImportantTrue').className = newTaskForm.important ? activeStyle : inactiveStyle;
+      document.getElementById('btnImportantFalse').className = !newTaskForm.important ? activeStyle : inactiveStyle;
+      document.getElementById('btnUrgentTrue').className = newTaskForm.urgent ? activeStyle : inactiveStyle;
+      document.getElementById('btnUrgentFalse').className = !newTaskForm.urgent ? activeStyle : inactiveStyle;
+
+      const q = getComputedQuadrant();
+      const meta = quadrantMeta[q];
+      const banner = document.getElementById('autoClassifyBanner');
+      const iconBox = document.getElementById('autoClassifyIcon');
+      banner.className = `p-4 rounded-2xl border ${meta.border} ${meta.bg} flex items-start gap-3 transition-all`;
+      iconBox.className = `w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${meta.badge}`;
+      document.getElementById('autoClassifyTitle').className = `text-xs font-bold ${meta.accentText}`;
+      document.getElementById('autoClassifyTitle').textContent = `Klasifikasi Otomatis: ${meta.num} (${meta.title})`;
+      document.getElementById('autoClassifyDesc').textContent = meta.subtitle;
+    }
+
+    function saveNewTask() {
+      const titleInput = document.getElementById('inputTaskTitle');
+      const courseInput = document.getElementById('inputTaskCourse');
+      const dateVal = document.getElementById('inputTaskDate').value;
+      const timeVal = document.getElementById('inputTaskTime').value || '23:59';
+
+      const title = titleInput.value.trim();
+      if (!title) {
+        titleInput.focus();
+        showToast('Isi nama tugas terlebih dahulu');
+        return;
+      }
+
+      const course = courseInput.value.trim() || 'Akademik Umum';
+      const q = getComputedQuadrant();
+
+      // Format friendly deadline label
+      let deadlineLabel = `Besok, ${timeVal}`;
+      if (dateVal) {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const tmr = new Date();
+        tmr.setDate(tmr.getDate() + 1);
+        const tmrStr = tmr.toISOString().split('T')[0];
+
+        if (dateVal === todayStr) {
+          deadlineLabel = `Hari Ini, ${timeVal}`;
+        } else if (dateVal === tmrStr) {
+          deadlineLabel = `Besok, ${timeVal}`;
+        } else {
+          const parsed = new Date(dateVal + 'T00:00:00');
+          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+          deadlineLabel = `${parsed.getDate()} ${months[parsed.getMonth()]}, ${timeVal}`;
+        }
+      }
+
+      const newTask = {
+        id: 't-' + Date.now(),
+        title,
+        course,
+        deadlineLabel,
+        quadrant: q,
+        completed: false
+      };
+
+      state.tasks.unshift(newTask);
+      if (!state.activeFocusTaskId) state.activeFocusTaskId = newTask.id;
+
+      closeModal('addTaskModal');
+      renderMatrix();
+      showToast(`Ditambahkan ke ${quadrantMeta[q].num}`);
+    }
+
+    // ---------------------------------------------------------
+    // 7. POMODORO FOCUS TIMER & WEB AUDIO CHIME
+    // ---------------------------------------------------------
+    function setPomodoroMode(mode) {
+      pauseTimer();
+      timerState.mode = mode;
+      const mins = mode === 'focus' ? timerState.focusMinutes : timerState.breakMinutes;
+      timerState.totalSeconds = mins * 60;
+      timerState.remainingSeconds = mins * 60;
+
+      const focusBtn = document.getElementById('modeFocusBtn');
+      const breakBtn = document.getElementById('modeBreakBtn');
+      const presetsRow = document.getElementById('durationPresetsRow');
+      const phaseBadge = document.getElementById('timerPhaseBadge');
+      const circle = document.getElementById('timerProgressCircle');
+
+      if (mode === 'focus') {
+        focusBtn.className = 'py-2.5 px-3 rounded-xl text-xs font-bold transition-all bg-white dark:bg-obsidian-800 text-sky-600 dark:text-sky-300 shadow-xs';
+        breakBtn.className = 'py-2.5 px-3 rounded-xl text-xs font-semibold transition-all text-slate-500 dark:text-slate-400';
+        presetsRow.classList.remove('opacity-40', 'pointer-events-none');
+        phaseBadge.textContent = 'SESI FOKUS';
+        phaseBadge.className = 'px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20 mb-2';
+        circle.classList.remove('text-emerald-500', 'dark:text-emerald-400');
+        circle.classList.add('text-sky-500', 'dark:text-sky-400');
+      } else {
+        breakBtn.className = 'py-2.5 px-3 rounded-xl text-xs font-bold transition-all bg-white dark:bg-obsidian-800 text-emerald-600 dark:text-emerald-300 shadow-xs';
+        focusBtn.className = 'py-2.5 px-3 rounded-xl text-xs font-semibold transition-all text-slate-500 dark:text-slate-400';
+        presetsRow.classList.add('opacity-40', 'pointer-events-none');
+        phaseBadge.textContent = 'JEDA ISTIRAHAT';
+        phaseBadge.className = 'px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 mb-2';
+        circle.classList.remove('text-sky-500', 'dark:text-sky-400');
+        circle.classList.add('text-emerald-500', 'dark:text-emerald-400');
+      }
+
+      updateTimerDisplay();
+    }
+
+    function setFocusDuration(mins) {
+      timerState.focusMinutes = mins;
+      document.getElementById('focusLabelMins').textContent = mins;
+      document.querySelectorAll('.dur-btn').forEach(btn => {
+        const d = Number(btn.getAttribute('data-dur'));
+        btn.className = d === mins
+          ? 'dur-btn px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold border border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 transition-all'
+          : 'dur-btn px-3.5 py-1.5 rounded-xl text-xs font-mono font-semibold border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-obsidian-900 text-slate-600 dark:text-slate-400 hover:border-slate-300 transition-all';
+      });
+      if (timerState.mode === 'focus') {
+        setPomodoroMode('focus');
+      }
+    }
+
+    function updateTimerDisplay() {
+      const m = Math.floor(timerState.remainingSeconds / 60);
+      const s = timerState.remainingSeconds % 60;
+      document.getElementById('timerDisplay').textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+
+      // Circle circumference = 2 * PI * 112 = 703.72
+      const circumference = 703.72;
+      const ratio = timerState.totalSeconds > 0 ? (timerState.remainingSeconds / timerState.totalSeconds) : 0;
+      const dashOffset = circumference * (1 - ratio);
+      document.getElementById('timerProgressCircle').style.strokeDashoffset = dashOffset;
+    }
+
+    function toggleTimer() {
+      if (timerState.isRunning) {
+        pauseTimer();
+      } else {
+        startTimer();
+      }
+    }
+
+    function startTimer() {
+      if (timerState.isRunning) return;
+      timerState.isRunning = true;
+      document.getElementById('timerStatusText').textContent = timerState.mode === 'focus' ? 'Fokus berlangsung tenang...' : 'Nikmati jeda istirahat...';
+      document.getElementById('timerAmbientGlow').classList.add('animate-calm-pulse');
+
+      const btn = document.getElementById('timerToggleBtn');
+      btn.innerHTML = `<i data-lucide="pause" class="w-4 h-4 fill-current"></i><span>Jeda</span>`;
+      lucide.createIcons();
+
+      timerState.intervalId = setInterval(() => {
+        if (timerState.remainingSeconds > 0) {
+          timerState.remainingSeconds--;
+          updateTimerDisplay();
+        } else {
+          completeTimerSession();
+        }
+      }, 1000);
+    }
+
+    function pauseTimer() {
+      timerState.isRunning = false;
+      clearInterval(timerState.intervalId);
+      document.getElementById('timerAmbientGlow').classList.remove('animate-calm-pulse');
+      if (timerState.remainingSeconds < timerState.totalSeconds && timerState.remainingSeconds > 0) {
+        document.getElementById('timerStatusText').textContent = 'Dijeda sementara';
+      } else {
+        document.getElementById('timerStatusText').textContent = 'Siap dimulai';
+      }
+      const btn = document.getElementById('timerToggleBtn');
+      btn.innerHTML = `<i data-lucide="play" class="w-4 h-4 fill-current"></i><span>Mulai</span>`;
+      lucide.createIcons();
+    }
+
+    function resetTimer() {
+      pauseTimer();
+      const mins = timerState.mode === 'focus' ? timerState.focusMinutes : timerState.breakMinutes;
+      timerState.totalSeconds = mins * 60;
+      timerState.remainingSeconds = mins * 60;
+      document.getElementById('timerStatusText').textContent = 'Siap dimulai';
+      updateTimerDisplay();
+    }
+
+    function completeTimerSession() {
+      pauseTimer();
+      if (state.soundEnabled) testPomodoroChime();
+
+      if (timerState.mode === 'focus') {
+        state.focusSessionsToday++;
+        updateStats();
+        showToast('Alhamdulillah! 1 Sesi Fokus selesai.');
+        setPomodoroMode('break');
+      } else {
+        showToast('Waktu istirahat selesai. Siap fokus kembali!');
+        setPomodoroMode('focus');
+      }
+    }
+
+    // Gentle Web Audio API Singing Bowl / Chime (No external URLs needed)
+    function testPomodoroChime() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const ctx = new AudioCtx();
+        const notes = [523.25, 659.25, 783.99]; // C5, E5, G5 calm triad
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.18);
+
+          gain.gain.setValueAtTime(0.001, ctx.currentTime + idx * 0.18);
+          gain.gain.exponentialRampToValueAtTime(0.12, ctx.currentTime + idx * 0.18 + 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + idx * 0.18 + 1.8);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + idx * 0.18);
+          osc.stop(ctx.currentTime + idx * 0.18 + 1.9);
+        });
+      } catch (e) {
+        // Fallback silently if audio blocked
+      }
+    }
+
+    function startFocusOnTask(taskId) {
+      state.activeFocusTaskId = taskId;
+      renderMatrix();
+      switchTab('fokus');
+      showToast('Tugas dipilih untuk sesi fokus');
+    }
+
+    function renderActiveFocusTaskCard() {
+      const container = document.getElementById('activeFocusTaskContainer');
+      const task = state.tasks.find(t => t.id === state.activeFocusTaskId);
+
+      if (!task) {
+        container.innerHTML = `
+          <div class="p-5 rounded-2xl border border-dashed border-slate-300 dark:border-white/10 text-center space-y-2">
+            <p class="text-xs text-slate-500 dark:text-slate-400">Belum ada tugas dipilih untuk sesi ini.</p>
+            <button onclick="openSelectFocusTaskModal()" class="px-4 py-2 rounded-xl text-xs font-bold bg-sky-500/15 text-sky-600 dark:text-sky-300">
+              Pilih Tugas Sekarang
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      const meta = quadrantMeta[task.quadrant];
+      container.innerHTML = `
+        <div class="p-4 rounded-2xl border ${meta.border} ${meta.bg} space-y-2">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="px-2.5 py-0.5 rounded-lg text-[11px] font-bold border ${meta.badge}">
+              ${meta.num}
+            </span>
+            <span class="text-xs font-medium text-slate-600 dark:text-slate-300">
+              ${escapeHtml(task.course)}
+            </span>
+          </div>
+          <h4 class="text-base font-extrabold text-slate-900 dark:text-white leading-snug">
+            ${escapeHtml(task.title)}
+          </h4>
+          <p class="text-xs font-mono text-slate-500 dark:text-slate-400">
+            Tenggat: ${escapeHtml(task.deadlineLabel)}
+          </p>
+        </div>
+
+        <button onclick="markActiveFocusTaskDone()"
+          class="w-full mt-3.5 py-3 px-4 rounded-2xl text-xs font-bold border border-slate-200 dark:border-white/10 bg-slate-50 hover:bg-emerald-500/15 dark:bg-obsidian-900 dark:hover:bg-emerald-500/15 text-slate-800 dark:text-slate-100 hover:text-emerald-700 dark:hover:text-emerald-300 hover:border-emerald-500/30 flex items-center justify-center gap-2 transition-all">
+          <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i>
+          <span>Tandai Tugas Ini Selesai</span>
+        </button>
+      `;
+      lucide.createIcons();
+    }
+
+    function markActiveFocusTaskDone() {
+      const task = state.tasks.find(t => t.id === state.activeFocusTaskId);
+      if (!task) return;
+      task.completed = true;
+      const nextActive = state.tasks.find(t => !t.completed);
+      state.activeFocusTaskId = nextActive ? nextActive.id : null;
+      renderMatrix();
+      showToast(`Tugas "${task.title}" ditandai selesai!`);
+    }
+
+    // ---------------------------------------------------------
+    // 8. DAILY SCHEDULE (JADWAL HARIAN)
+    // ---------------------------------------------------------
+    const schedulePeriods = [
+      { id: 'period-pagi', title: 'Pagi (06:00 – 11:00)', icon: 'sunrise', color: 'text-amber-500', hours: ['06:00', '07:00', '08:00', '09:00', '10:00'] },
+      { id: 'period-siang', title: 'Siang (11:00 – 15:00)', icon: 'sun', color: 'text-sky-500', hours: ['11:00', '12:00', '13:00', '14:00'] },
+      { id: 'period-sore', title: 'Sore (15:00 – 18:00)', icon: 'sunset', color: 'text-orange-500', hours: ['15:00', '16:00', '17:00'] },
+      { id: 'period-malam', title: 'Malam (18:00 – 22:00)', icon: 'moon', color: 'text-indigo-400', hours: ['18:00', '19:00', '20:00', '21:00'] }
+    ];
+
+    const slotColorStyles = {
+      emerald: 'border-emerald-300/80 dark:border-emerald-500/25 bg-emerald-50/75 dark:bg-[#111E1A]',
+      rose: 'border-rose-300/80 dark:border-rose-500/25 bg-rose-50/75 dark:bg-[#1E1418]',
+      amber: 'border-amber-300/80 dark:border-amber-500/25 bg-amber-50/75 dark:bg-[#1E1A12]',
+      sky: 'border-sky-300/80 dark:border-sky-500/25 bg-sky-50/75 dark:bg-[#111B24]'
+    };
+
+    function renderSchedule() {
+      const container = document.getElementById('scheduleTimelineContainer');
+      const filledCount = Object.keys(state.schedule).length;
+      document.getElementById('scheduleSlotSummary').textContent = `${filledCount}/16 slot terisi`;
+
+      container.innerHTML = schedulePeriods.map(period => {
+        const rowsHtml = period.hours.map((hour, idx) => {
+          const item = state.schedule[hour];
+          const isLast = idx === period.hours.length - 1;
+
+          if (item) {
+            const cardStyle = slotColorStyles[item.color] || slotColorStyles.sky;
+            return `
+              <div class="flex items-stretch gap-3 sm:gap-4">
+                <!-- Left Time Rail -->
+                <div class="w-12 sm:w-14 shrink-0 flex flex-col items-center">
+                  <span class="font-mono text-xs font-bold text-slate-700 dark:text-slate-200 tabular-nums pt-3.5">
+                    ${hour}
+                  </span>
+                  ${!isLast ? '<div class="w-[2px] flex-1 bg-slate-200 dark:bg-white/[0.07] my-1"></div>' : ''}
+                </div>
+
+                <!-- Scheduled Block Card -->
+                <div class="flex-1 mb-2.5 p-3.5 sm:p-4 rounded-2xl border ${cardStyle} flex items-center justify-between gap-3 transition-all">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <button onclick="toggleScheduleItemDone('${hour}')" aria-label="Selesai"
+                      class="w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${item.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-400/50 dark:border-slate-600 hover:border-emerald-400'}">
+                      ${item.completed ? '<i data-lucide="check" class="w-3.5 h-3.5 stroke-[3]"></i>' : ''}
+                    </button>
+                    <div class="min-w-0">
+                      <p class="text-sm font-bold truncate ${item.completed ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'}">
+                        ${escapeHtml(item.title)}
+                      </p>
+                      <p class="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                        ${escapeHtml(item.meta)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button onclick="removeScheduleSlot('${hour}')" aria-label="Hapus dari jadwal"
+                    class="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors shrink-0">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              </div>
+            `;
+          } else {
+            return `
+              <div class="flex items-stretch gap-3 sm:gap-4">
+                <!-- Left Time Rail -->
+                <div class="w-12 sm:w-14 shrink-0 flex flex-col items-center">
+                  <span class="font-mono text-xs font-medium text-slate-400 dark:text-slate-500 tabular-nums pt-3">
+                    ${hour}
+                  </span>
+                  ${!isLast ? '<div class="w-[1.5px] flex-1 bg-slate-200/70 dark:bg-white/[0.05] my-1"></div>' : ''}
+                </div>
+
+                <!-- Clean Ghost Empty Slot -->
+                <button onclick="openSlotPicker('${hour}')"
+                  class="flex-1 mb-2 py-2.5 px-4 rounded-2xl border border-dashed border-slate-200 dark:border-white/[0.08] hover:border-sky-400/60 dark:hover:border-sky-400/40 hover:bg-sky-500/[0.04] text-left flex items-center gap-2.5 text-slate-400 dark:text-slate-500 hover:text-sky-600 dark:hover:text-sky-300 transition-all group">
+                  <i data-lucide="plus-circle" class="w-4 h-4 opacity-70 group-hover:opacity-100"></i>
+                  <span class="text-xs font-medium">Ketuk untuk jadwalkan tugas atau aktivitas</span>
+                </button>
+              </div>
+            `;
+          }
+        }).join('');
+
+        return `
+          <div id="${period.id}" class="scroll-mt-24 space-y-3">
+            <!-- Period Banner Header -->
+            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-sky-500/10 dark:bg-obsidian-850 border border-sky-500/20 dark:border-white/[0.08]">
+              <i data-lucide="${period.icon}" class="w-4 h-4 ${period.color}"></i>
+              <span class="text-xs font-bold text-slate-800 dark:text-slate-200">${period.title}</span>
+            </div>
+
+            <div class="pl-0.5">
+              ${rowsHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function scrollToPeriod(id) {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function toggleScheduleItemDone(hour) {
+      if (!state.schedule[hour]) return;
+      state.schedule[hour].completed = !state.schedule[hour].completed;
+      renderSchedule();
+    }
+
+    function removeScheduleSlot(hour) {
+      delete state.schedule[hour];
+      renderSchedule();
+      showToast(`Slot jam ${hour} dikosongkan`);
+    }
+
+    // ---------------------------------------------------------
+    // 9. UNIFIED PICKER MODAL (FOCUS TASK / SCHEDULE SLOT)
+    // ---------------------------------------------------------
+    function openSelectFocusTaskModal() {
+      pickerContext = { mode: 'focus', targetHour: null, targetTaskId: null };
+      document.getElementById('pickerModalTitle').textContent = 'Pilih Tugas untuk Fokus';
+      document.getElementById('pickerModalSubtitle').textContent = 'Tautkan satu tugas aktif pada timer Pomodoro';
+      document.getElementById('customSlotInputBox').classList.add('hidden');
+
+      const list = document.getElementById('pickerListContainer');
+      const activeTasks = state.tasks.filter(t => !t.completed);
+      list.innerHTML = activeTasks.length === 0
+        ? `<p class="text-xs text-slate-500 text-center py-4">Semua tugas sudah selesai!</p>`
+        : activeTasks.map(t => {
+            const meta = quadrantMeta[t.quadrant];
+            return `
+              <button onclick="selectFocusTaskFromModal('${t.id}')" class="w-full p-3.5 rounded-2xl border ${meta.border} ${meta.bg} text-left flex items-center justify-between gap-3 hover:scale-[1.01] transition-transform">
+                <div>
+                  <span class="text-[10px] font-bold uppercase ${meta.accentText}">${meta.num} • ${escapeHtml(t.course)}</span>
+                  <p class="text-sm font-bold text-slate-900 dark:text-white mt-0.5">${escapeHtml(t.title)}</p>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+              </button>
+            `;
+          }).join('');
+
+      openModal('pickerModal');
+      lucide.createIcons();
+    }
+
+    function selectFocusTaskFromModal(taskId) {
+      state.activeFocusTaskId = taskId;
+      closeModal('pickerModal');
+      renderMatrix();
+      showToast('Tugas fokus diperbarui');
+    }
+
+    function openSlotPicker(hour) {
+      pickerContext = { mode: 'slot', targetHour: hour, targetTaskId: null };
+      document.getElementById('pickerModalTitle').textContent = `Jadwalkan Jam ${hour}`;
+      document.getElementById('pickerModalSubtitle').textContent = 'Pilih tugas dari matriks atau buat rutinitas khusus';
+      document.getElementById('customSlotInputBox').classList.remove('hidden');
+      document.getElementById('customSlotTitle').value = '';
+
+      const list = document.getElementById('pickerListContainer');
+      list.innerHTML = state.tasks.map(t => {
+        const meta = quadrantMeta[t.quadrant];
+        return `
+          <button onclick="assignTaskToHour('${t.id}', '${hour}')" class="w-full p-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-obsidian-850 hover:border-sky-400 text-left flex items-center justify-between gap-2 transition-all">
+            <div>
+              <span class="text-[10px] font-bold ${meta.accentText}">${meta.num}</span>
+              <p class="text-xs font-bold text-slate-900 dark:text-white">${escapeHtml(t.title)}</p>
+            </div>
+            <span class="text-[11px] font-semibold text-sky-600 dark:text-sky-400">+ Pasang</span>
+          </button>
+        `;
+      }).join('');
+
+      openModal('pickerModal');
+      lucide.createIcons();
+    }
+
+    function openScheduleForTask(taskId) {
+      const task = state.tasks.find(t => t.id === taskId);
+      if (!task) return;
+      pickerContext = { mode: 'scheduleTask', targetHour: null, targetTaskId: taskId };
+      document.getElementById('pickerModalTitle').textContent = 'Pilih Jam Pelaksanaan';
+      document.getElementById('pickerModalSubtitle').textContent = `Menjadwalkan: ${task.title}`;
+      document.getElementById('customSlotInputBox').classList.add('hidden');
+
+      const allHours = schedulePeriods.flatMap(p => p.hours);
+      const freeHours = allHours.filter(h => !state.schedule[h]);
+
+      const list = document.getElementById('pickerListContainer');
+      list.innerHTML = `
+        <div class="grid grid-cols-3 gap-2">
+          ${freeHours.map(h => `
+            <button onclick="assignTaskToHour('${taskId}', '${h}')" class="py-3 px-2 rounded-xl font-mono text-xs font-bold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25 transition-all">
+              ${h}
+            </button>
+          `).join('')}
+        </div>
+      `;
+
+      openModal('pickerModal');
+    }
+
+    function assignTaskToHour(taskId, hour) {
+      const task = state.tasks.find(t => t.id === taskId);
+      if (!task) return;
+      const colorMap = { 1: 'rose', 2: 'emerald', 3: 'amber', 4: 'sky' };
+      state.schedule[hour] = {
+        title: task.title,
+        meta: `${task.course} • Terjadwal dari Matriks`,
+        color: colorMap[task.quadrant] || 'sky',
+        completed: task.completed,
+        taskId: task.id
+      };
+      closeModal('pickerModal');
+      renderSchedule();
+      switchTab('jadwal');
+      showToast(`Dijadwalkan pada pukul ${hour}`);
+    }
+
+    function confirmCustomSlotActivity() {
+      const input = document.getElementById('customSlotTitle');
+      const val = input.value.trim();
+      if (!val || !pickerContext.targetHour) {
+        input.focus();
+        return;
+      }
+      state.schedule[pickerContext.targetHour] = {
+        title: val,
+        meta: 'Aktivitas / Rutinitas Terjadwal',
+        color: 'emerald',
+        completed: false
+      };
+      closeModal('pickerModal');
+      renderSchedule();
+      showToast(`Aktivitas dipasang pada pukul ${pickerContext.targetHour}`);
+    }
+
+    // ---------------------------------------------------------
+    // 10. MODAL & TOAST HELPERS
+    // ---------------------------------------------------------
+    function openModal(id) {
+      document.getElementById(id).classList.remove('modal-hidden');
+      lucide.createIcons();
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('modal-hidden');
+    }
+
+    function showToast(msg) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'px-4 py-2.5 rounded-2xl bg-slate-900/95 dark:bg-white/95 text-white dark:text-obsidian-950 text-xs font-bold shadow-lg flex items-center gap-2 transition-all duration-300 translate-y-0 opacity-100';
+      toast.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 dark:text-emerald-600 shrink-0"></i><span>${escapeHtml(msg)}</span>`;
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', '-translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 2400);
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // Close modals when clicking backdrop
+    document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+      backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) {
+          backdrop.classList.add('modal-hidden');
+        }
+      });
+    });
+
+    // ---------------------------------------------------------
+    // 11. BOOTSTRAP APP
+    // ---------------------------------------------------------
+    window.addEventListener('DOMContentLoaded', () => {
+      applyTheme('dark');
+      setReflectionSlide(0);
+      updateFilterPills();
+      renderMatrix();
+      setFocusDuration(25);
+      renderSchedule();
+      switchTab('matriks');
+      lucide.createIcons();
+    });
+  </script>
+</body>
+</html>

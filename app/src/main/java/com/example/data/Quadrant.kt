@@ -7,27 +7,32 @@ import com.example.ui.theme.Q1BorderDark
 import com.example.ui.theme.Q1BorderLight
 import com.example.ui.theme.Q1ContainerDark
 import com.example.ui.theme.Q1ContainerLight
+import com.example.ui.theme.Q1Dot
 import com.example.ui.theme.Q2AccentDark
 import com.example.ui.theme.Q2AccentLight
 import com.example.ui.theme.Q2BorderDark
 import com.example.ui.theme.Q2BorderLight
 import com.example.ui.theme.Q2ContainerDark
 import com.example.ui.theme.Q2ContainerLight
+import com.example.ui.theme.Q2Dot
 import com.example.ui.theme.Q3AccentDark
 import com.example.ui.theme.Q3AccentLight
 import com.example.ui.theme.Q3BorderDark
 import com.example.ui.theme.Q3BorderLight
 import com.example.ui.theme.Q3ContainerDark
 import com.example.ui.theme.Q3ContainerLight
+import com.example.ui.theme.Q3Dot
 import com.example.ui.theme.Q4AccentDark
 import com.example.ui.theme.Q4AccentLight
 import com.example.ui.theme.Q4BorderDark
 import com.example.ui.theme.Q4BorderLight
 import com.example.ui.theme.Q4ContainerDark
 import com.example.ui.theme.Q4ContainerLight
+import com.example.ui.theme.Q4Dot
 
 enum class Quadrant(
     val code: String,
+    val shortCode: String,
     val title: String,
     val criteriaLabel: String,
     val actionHint: String,
@@ -35,6 +40,7 @@ enum class Quadrant(
 ) {
     Q1_DO_FIRST(
         code = "Kuadran I",
+        shortCode = "KI",
         title = "Penting & Mendesak",
         criteriaLabel = "Lakukan Segera",
         actionHint = "Deadline dekat, ujian besok, atau tugas krusial",
@@ -42,46 +48,49 @@ enum class Quadrant(
     ),
     Q2_SCHEDULE(
         code = "Kuadran II",
+        shortCode = "KII",
         title = "Penting & Tidak Mendesak",
         criteriaLabel = "Jadwalkan",
         actionHint = "Tugas jangka panjang, belajar rutin, olahraga",
-        description = "Kunci ketenangan mahasiswa: cicil bertahap lewat Time-Blocking sebelum menjadi mendesak."
+        description = "Kunci ketenangan mahasiswa: cicil bertahap lewat Jadwal Harian sebelum menjadi mendesak."
     ),
     Q3_DELEGATE(
         code = "Kuadran III",
+        shortCode = "KIII",
         title = "Tidak Penting & Mendesak",
-        criteriaLabel = "Batasi / Delegasikan",
-        actionHint = "Pesan masuk beruntun atau gangguan aktivitas mendadak",
+        criteriaLabel = "Batasi",
+        actionHint = "Pesan masuk beruntun atau gangguan mendadak",
         description = "Tangani singkat di sela jadwal agar tidak menggeser prioritas tugas kuliah utama."
     ),
     Q4_ELIMINATE(
         code = "Kuadran IV",
+        shortCode = "KIV",
         title = "Tidak Penting & Tidak Mendesak",
         criteriaLabel = "Kurangi",
-        actionHint = "Media sosial berlebih atau hiburan berlarut-larut",
+        actionHint = "Media sosial berlebihan atau hiburan berlarut-larut",
         description = "Kendalikan durasinya agar waktu tetap bernilai dan terhindar dari penundaan."
     );
 
     fun colors(darkTheme: Boolean): QuadrantColors = when (this) {
         Q1_DO_FIRST -> if (darkTheme) {
-            QuadrantColors(Q1AccentDark, Q1ContainerDark, Q1BorderDark)
+            QuadrantColors(Q1Dot, Q1AccentDark, Q1ContainerDark, Q1BorderDark)
         } else {
-            QuadrantColors(Q1AccentLight, Q1ContainerLight, Q1BorderLight)
+            QuadrantColors(Q1Dot, Q1AccentLight, Q1ContainerLight, Q1BorderLight)
         }
         Q2_SCHEDULE -> if (darkTheme) {
-            QuadrantColors(Q2AccentDark, Q2ContainerDark, Q2BorderDark)
+            QuadrantColors(Q2Dot, Q2AccentDark, Q2ContainerDark, Q2BorderDark)
         } else {
-            QuadrantColors(Q2AccentLight, Q2ContainerLight, Q2BorderLight)
+            QuadrantColors(Q2Dot, Q2AccentLight, Q2ContainerLight, Q2BorderLight)
         }
         Q3_DELEGATE -> if (darkTheme) {
-            QuadrantColors(Q3AccentDark, Q3ContainerDark, Q3BorderDark)
+            QuadrantColors(Q3Dot, Q3AccentDark, Q3ContainerDark, Q3BorderDark)
         } else {
-            QuadrantColors(Q3AccentLight, Q3ContainerLight, Q3BorderLight)
+            QuadrantColors(Q3Dot, Q3AccentLight, Q3ContainerLight, Q3BorderLight)
         }
         Q4_ELIMINATE -> if (darkTheme) {
-            QuadrantColors(Q4AccentDark, Q4ContainerDark, Q4BorderDark)
+            QuadrantColors(Q4Dot, Q4AccentDark, Q4ContainerDark, Q4BorderDark)
         } else {
-            QuadrantColors(Q4AccentLight, Q4ContainerLight, Q4BorderLight)
+            QuadrantColors(Q4Dot, Q4AccentLight, Q4ContainerLight, Q4BorderLight)
         }
     }
 
@@ -96,6 +105,7 @@ enum class Quadrant(
 }
 
 data class QuadrantColors(
+    val dot: Color,
     val accent: Color,
     val container: Color,
     val border: Color

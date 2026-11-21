@@ -36,6 +36,58 @@ object GentleChimePlayer {
         }
     }
 
+    suspend fun playPreviewChime() {
+        withContext(Dispatchers.IO) {
+            try {
+                val sampleRate = 22050
+                val durationSec = 1.6
+                val numSamples = (sampleRate * durationSec).toInt()
+                val buffer = ShortArray(numSamples)
+                val notes = listOf(523.25 to 0.0, 659.25 to 0.16, 783.99 to 0.32)
+
+                for (i in 0 until numSamples) {
+                    val t = i.toDouble() / sampleRate
+                    var sample = 0.0
+                    for ((freq, startSec) in notes) {
+                        if (t >= startSec) {
+                            val dt = t - startSec
+                            val env = if (dt < 0.03) dt / 0.03 else exp(-(dt - 0.03) * 3.0)
+                            sample += 0.35 * sin(2.0 * PI * freq * dt) * env
+                        }
+                    }
+                    val scaled = (sample * 0.42 * Short.MAX_VALUE).toInt()
+                        .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt())
+                    buffer[i] = scaled.toShort()
+                }
+
+                val attrs = AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build()
+                val format = AudioFormat.Builder()
+                    .setSampleRate(sampleRate)
+                    .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                    .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                    .build()
+                val track = AudioTrack.Builder()
+                    .setAudioAttributes(attrs)
+                    .setAudioFormat(format)
+                    .setTransferMode(AudioTrack.MODE_STATIC)
+                    .setBufferSizeInBytes(buffer.size * 2)
+                    .build()
+                track.write(buffer, 0, buffer.size)
+                track.play()
+                kotlinx.coroutines.delay(1700L)
+                try {
+                    track.stop()
+                    track.release()
+                } catch (_: Throwable) {
+                }
+            } catch (_: Throwable) {
+            }
+        }
+    }
+
     @Suppress("DEPRECATION")
     fun stopAlarm(context: Context) {
         synchronized(lock) {

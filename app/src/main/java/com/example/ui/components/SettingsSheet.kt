@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -33,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -45,6 +45,22 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.data.ThemeMode
+import com.example.ui.theme.Emerald300
+import com.example.ui.theme.Emerald500
+import com.example.ui.theme.Emerald600
+import com.example.ui.theme.LocalIsDarkTheme
+import com.example.ui.theme.Obsidian800
+import com.example.ui.theme.Obsidian850
+import com.example.ui.theme.Obsidian900
+import com.example.ui.theme.Obsidian950
+import com.example.ui.theme.PureWhite
+import com.example.ui.theme.Rose400
+import com.example.ui.theme.Sky400
+import com.example.ui.theme.Sky500
+import com.example.ui.theme.Sky600
+import com.example.ui.theme.Slate100
+import com.example.ui.theme.Slate200
+import com.example.ui.theme.Slate300
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,41 +74,54 @@ fun SettingsSheet(
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val isDark = LocalIsDarkTheme.current
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface
+        containerColor = if (isDark) Obsidian900 else PureWhite,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp)
+                .padding(horizontal = 22.dp)
                 .padding(bottom = 28.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Outlined.Palette,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.width(8.dp))
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Sky500.copy(alpha = 0.14f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Palette,
+                        contentDescription = null,
+                        tint = if (isDark) Sky400 else Sky600,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     text = "Pengaturan Tampilan & Aplikasi",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
             }
 
-            Text(
-                text = "Pilih Tema Tampilan",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary
-            )
-
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = "Pilih Tema Tampilan",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isDark) Sky400 else Sky600
+                )
+
                 ThemeMode.entries.forEach { mode ->
                     val isSelected = currentThemeMode == mode
                     val icon = when (mode) {
@@ -116,13 +145,14 @@ fun SettingsSheet(
             // Sound setting row
             Surface(
                 shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                color = if (isDark) Obsidian850 else Slate100.copy(alpha = 0.7f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -133,18 +163,18 @@ fun SettingsSheet(
                         Icon(
                             imageVector = Icons.Outlined.VolumeUp,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = if (isDark) Sky400 else Sky600,
                             modifier = Modifier.size(20.dp)
                         )
-                        Spacer(modifier = Modifier.width(10.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
                                 text = "Dering Panjang Pomodoro",
                                 style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onBackground
                             )
                             Text(
-                                text = "Bunyikan dering saat waktu fokus/istirahat habis",
+                                text = "Bunyikan dering lembut saat waktu fokus habis",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -154,6 +184,10 @@ fun SettingsSheet(
                     Switch(
                         checked = soundEnabled,
                         onCheckedChange = { onToggleSound() },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = PureWhite,
+                            checkedTrackColor = Sky500
+                        ),
                         modifier = Modifier.testTag("settings_sound_switch")
                     )
                 }
@@ -162,7 +196,8 @@ fun SettingsSheet(
             // Notification status row
             Surface(
                 shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                color = if (isDark) Obsidian850 else Slate100.copy(alpha = 0.7f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -183,19 +218,15 @@ fun SettingsSheet(
                                 Icons.Outlined.NotificationsOff
                             },
                             contentDescription = null,
-                            tint = if (notificationsEnabled) {
-                                MaterialTheme.colorScheme.secondary
-                            } else {
-                                MaterialTheme.colorScheme.error
-                            },
+                            tint = if (notificationsEnabled) Emerald500 else Rose400,
                             modifier = Modifier.size(20.dp)
                         )
-                        Spacer(modifier = Modifier.width(10.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
                                 text = "Notifikasi Perangkat",
                                 style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onBackground
                             )
                             Text(
                                 text = if (notificationsEnabled) {
@@ -208,12 +239,25 @@ fun SettingsSheet(
                             )
                         }
                     }
-                    if (!notificationsEnabled) {
+                    if (notificationsEnabled) {
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = Emerald500.copy(alpha = 0.14f)
+                        ) {
+                            Text(
+                                text = "Aktif",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isDark) Emerald300 else Emerald600,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                            )
+                        }
+                    } else {
                         TextButton(
                             onClick = onRequestNotifications,
                             modifier = Modifier.testTag("settings_enable_notifications_button")
                         ) {
-                            Text("Aktifkan")
+                            Text("Aktifkan", fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -231,20 +275,17 @@ private fun ThemeOptionCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isDark = LocalIsDarkTheme.current
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = if (selected) {
-            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+            Sky500.copy(alpha = 0.11f)
         } else {
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+            if (isDark) Obsidian850 else Slate100.copy(alpha = 0.65f)
         },
         border = BorderStroke(
-            width = if (selected) 1.5.dp else 1.dp,
-            color = if (selected) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.outlineVariant
-            }
+            width = if (selected) 2.dp else 1.dp,
+            color = if (selected) Sky500 else MaterialTheme.colorScheme.outlineVariant
         ),
         modifier = modifier
             .fillMaxWidth()
@@ -257,13 +298,13 @@ private fun ThemeOptionCard(
         ) {
             Box(
                 modifier = Modifier
-                    .size(38.dp)
+                    .size(40.dp)
                     .clip(CircleShape)
                     .background(
                         if (selected) {
-                            MaterialTheme.colorScheme.primary
+                            if (isDark) Sky400 else Sky500
                         } else {
-                            MaterialTheme.colorScheme.surface
+                            if (isDark) Obsidian800 else Slate200
                         }
                     ),
                 contentAlignment = Alignment.Center
@@ -272,22 +313,22 @@ private fun ThemeOptionCard(
                     imageVector = icon,
                     contentDescription = null,
                     tint = if (selected) {
-                        MaterialTheme.colorScheme.onPrimary
+                        if (isDark) Obsidian950 else PureWhite
                     } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
+                        if (isDark) Slate300 else MaterialTheme.colorScheme.onSurfaceVariant
                     },
                     modifier = Modifier.size(20.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(14.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
                 Text(
                     text = subtitle,
@@ -301,7 +342,7 @@ private fun ThemeOptionCard(
                 Icon(
                     imageVector = Icons.Rounded.Check,
                     contentDescription = "Tema terpilih",
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = if (isDark) Sky400 else Sky500,
                     modifier = Modifier.size(20.dp)
                 )
             }

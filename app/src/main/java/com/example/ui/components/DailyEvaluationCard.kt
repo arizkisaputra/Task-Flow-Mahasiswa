@@ -3,12 +3,16 @@ package com.example.ui.components
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -17,10 +21,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.Timer
+import androidx.compose.material.icons.rounded.LocalFireDepartment
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -29,15 +32,31 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.data.Quadrant
 import com.example.data.TaskEntity
 import com.example.ui.DailyEvaluationSummary
+import com.example.ui.theme.Emerald400
+import com.example.ui.theme.Emerald500
+import com.example.ui.theme.JetBrainsMonoFamily
 import com.example.ui.theme.LocalIsDarkTheme
+import com.example.ui.theme.Obsidian700
+import com.example.ui.theme.Obsidian850
+import com.example.ui.theme.PureWhite
+import com.example.ui.theme.Sky400
+import com.example.ui.theme.Sky500
+import com.example.ui.theme.Sky600
+import com.example.ui.theme.Slate200
+import com.example.ui.theme.Slate400
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DailyEvaluationCard(
     evaluation: DailyEvaluationSummary,
@@ -45,135 +64,169 @@ fun DailyEvaluationCard(
     focusSessionsToday: Int,
     modifier: Modifier = Modifier
 ) {
-    val darkTheme = LocalIsDarkTheme.current
+    val isDark = LocalIsDarkTheme.current
     val animatedProgress by animateFloatAsState(
         targetValue = evaluation.progressFraction.coerceIn(0f, 1f),
         animationSpec = tween(durationMillis = 500),
         label = "daily_progress_animation"
     )
+    val ringTrackColor = if (isDark) Obsidian700 else Slate200
+    val ringActiveColor = if (isDark) Emerald400 else Emerald500
 
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .testTag("daily_evaluation_card"),
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(24.dp),
+        color = if (isDark) Obsidian850 else PureWhite,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        tonalElevation = 1.dp
+        tonalElevation = 0.dp
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Top Row: Summary Copy + Radial Completion Ring
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Rounded.CheckCircle,
-                        contentDescription = "Evaluasi Pencapaian Harian",
-                        tint = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Evaluasi Pencapaian Harian",
+                        text = "EVALUASI HARIAN",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp,
+                        color = Slate400
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Pencapaian Tugas",
                         style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = evaluation.encouragementMessage,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 17.sp
                     )
                 }
 
-                Surface(
-                    shape = RoundedCornerShape(50),
-                    color = MaterialTheme.colorScheme.secondaryContainer
+                Spacer(modifier = Modifier.width(12.dp))
+
+                // Radial Completion Ring
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .testTag("daily_progress_bar"),
+                    contentAlignment = Alignment.Center
                 ) {
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        val stroke = 5.5.dp.toPx()
+                        val diameter = size.minDimension - stroke
+                        val topLeft = Offset((size.width - diameter) / 2f, (size.height - diameter) / 2f)
+                        val arcSize = Size(diameter, diameter)
+
+                        drawArc(
+                            color = ringTrackColor,
+                            startAngle = 0f,
+                            sweepAngle = 360f,
+                            useCenter = false,
+                            topLeft = topLeft,
+                            size = arcSize,
+                            style = Stroke(width = stroke, cap = StrokeCap.Round)
+                        )
+                        if (animatedProgress > 0f) {
+                            drawArc(
+                                color = ringActiveColor,
+                                startAngle = -90f,
+                                sweepAngle = 360f * animatedProgress,
+                                useCenter = false,
+                                topLeft = topLeft,
+                                size = arcSize,
+                                style = Stroke(width = stroke, cap = StrokeCap.Round)
+                            )
+                        }
+                    }
                     Text(
-                        text = "${evaluation.completedTasks}/${evaluation.totalTasks} Tugas (${evaluation.percentage}%)",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        text = "${evaluation.percentage}%",
+                        fontFamily = JetBrainsMonoFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Spacer(modifier = Modifier.height(14.dp))
 
-            LinearProgressIndicator(
-                progress = { animatedProgress },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(10.dp)
-                    .clip(RoundedCornerShape(50))
-                    .testTag("daily_progress_bar"),
-                color = MaterialTheme.colorScheme.secondary,
-                trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                strokeCap = StrokeCap.Round
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Text(
-                text = evaluation.encouragementMessage,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(
+            // Quadrant Mini Badges + Focus Counter
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Quadrant.entries.forEach { quadrant ->
-                        val qTasks = allTasks.filter { it.quadrant == quadrant }
-                        val qDone = qTasks.count { it.isCompleted }
-                        val qColor = quadrant.colors(darkTheme)
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = qColor.container,
-                            border = BorderStroke(1.dp, qColor.border)
+                Quadrant.entries.forEach { quadrant ->
+                    val qTasks = allTasks.filter { it.quadrant == quadrant }
+                    val qDone = qTasks.count { it.isCompleted }
+                    val qColor = quadrant.colors(isDark)
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = qColor.dot.copy(alpha = 0.12f),
+                        border = BorderStroke(1.dp, qColor.dot.copy(alpha = 0.22f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(7.dp)
-                                        .clip(CircleShape)
-                                        .background(qColor.accent)
-                                )
-                                Spacer(modifier = Modifier.width(5.dp))
-                                Text(
-                                    text = "${quadrant.code.replace("Kuadran ", "K")}: $qDone/${qTasks.size}",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = qColor.accent,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(CircleShape)
+                                    .background(qColor.dot)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "${quadrant.shortCode}: $qDone/${qTasks.size}",
+                                fontFamily = JetBrainsMonoFamily,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = qColor.accent
+                            )
                         }
                     }
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Rounded.Timer,
-                        contentDescription = "Sesi Fokus Hari Ini",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(15.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "$focusSessionsToday sesi",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                // Focus Session Counter Badge
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = Sky500.copy(alpha = 0.12f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.LocalFireDepartment,
+                            contentDescription = "Sesi Fokus Hari Ini",
+                            tint = if (isDark) Sky400 else Sky600,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "$focusSessionsToday sesi",
+                            fontFamily = JetBrainsMonoFamily,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (isDark) Sky400 else Sky600
+                        )
+                    }
                 }
             }
         }

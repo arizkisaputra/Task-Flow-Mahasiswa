@@ -2,83 +2,107 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Calming Pastel Blue, Sage Green & Clean White Palette
-val CalmBgLight = Color(0xFFF6F9FB)
-val CalmSurfaceLight = Color(0xFFFFFFFF)
-val CalmSurfaceVariantLight = Color(0xFFEAF1F5)
-val CalmPrimaryLight = Color(0xFF3A7CA5)
-val CalmOnPrimaryLight = Color(0xFFFFFFFF)
-val CalmPrimaryContainerLight = Color(0xFFD6ECF8)
-val CalmOnPrimaryContainerLight = Color(0xFF0E3952)
+// Obsidian (Dark Mode) & Alabaster (Light Mode) Calm Palette
+val Obsidian950 = Color(0xFF090D12)
+val Obsidian900 = Color(0xFF0E141B)
+val Obsidian850 = Color(0xFF131B24)
+val Obsidian800 = Color(0xFF19232F)
+val Obsidian700 = Color(0xFF243242)
 
-val SageSecondaryLight = Color(0xFF56876D)
-val SageOnSecondaryLight = Color(0xFFFFFFFF)
-val SageSecondaryContainerLight = Color(0xFFD9EDE2)
-val SageOnSecondaryContainerLight = Color(0xFF173827)
+val Alabaster50 = Color(0xFFF7F8F6)
+val Alabaster100 = Color(0xFFEFF1ED)
+val Alabaster200 = Color(0xFFE2E6DF)
+val PureWhite = Color(0xFFFFFFFF)
 
-val SandTertiaryLight = Color(0xFFB38236)
-val SandOnTertiaryLight = Color(0xFFFFFFFF)
-val SandTertiaryContainerLight = Color(0xFFFAF0DA)
-val SandOnTertiaryContainerLight = Color(0xFF422C08)
+// Text & Hairline Borders
+val Slate900 = Color(0xFF0F172A)
+val Slate800 = Color(0xFF1E293B)
+val Slate600 = Color(0xFF475569)
+val Slate500 = Color(0xFF64748B)
+val Slate400 = Color(0xFF94A3B8)
+val Slate300 = Color(0xFFCBD5E1)
+val Slate200 = Color(0xFFE2E8F0)
+val Slate100 = Color(0xFFF1F5F9)
 
-val CalmTextPrimaryLight = Color(0xFF1A2833)
-val CalmTextSecondaryLight = Color(0xFF546877)
-val CalmOutlineLight = Color(0xFFCBD8E2)
-val CalmOutlineVariantLight = Color(0xFFE1EAEF)
+// Calm Accents (Sky, Teal, Emerald/Sage, Coral/Rose, Amber)
+val Sky600 = Color(0xFF0284C7)
+val Sky500 = Color(0xFF0EA5E9)
+val Sky400 = Color(0xFF38BDF8)
+val Sky100 = Color(0xFFE0F2FE)
+val Sky950 = Color(0xFF082F49)
 
-// Dark Theme Calming Equivalents
-val CalmBgDark = Color(0xFF0F171E)
-val CalmSurfaceDark = Color(0xFF17222C)
-val CalmSurfaceVariantDark = Color(0xFF21303D)
-val CalmPrimaryDark = Color(0xFF84C1E6)
-val CalmOnPrimaryDark = Color(0xFF093148)
-val CalmPrimaryContainerDark = Color(0xFF1D4D6B)
-val CalmOnPrimaryContainerDark = Color(0xFFD6ECF8)
+val Teal500 = Color(0xFF14B8A6)
+val Teal400 = Color(0xFF2DD4BF)
 
-val SageSecondaryDark = Color(0xFF93C9AC)
-val SageOnSecondaryDark = Color(0xFF113523)
-val SageSecondaryContainerDark = Color(0xFF29513D)
-val SageOnSecondaryContainerDark = Color(0xFFD9EDE2)
+val Emerald700 = Color(0xFF047857)
+val Emerald600 = Color(0xFF059669)
+val Emerald500 = Color(0xFF10B981)
+val Emerald400 = Color(0xFF34D399)
+val Emerald300 = Color(0xFF6EE7B7)
+val Emerald100 = Color(0xFFD1FAE5)
+val Emerald950 = Color(0xFF064E3B)
 
-val SandTertiaryDark = Color(0xFFE5BA73)
-val SandOnTertiaryDark = Color(0xFF3E2904)
-val SandTertiaryContainerDark = Color(0xFF5B3F11)
-val SandOnTertiaryContainerDark = Color(0xFFFAF0DA)
+val Amber700 = Color(0xFFB45309)
+val Amber600 = Color(0xFFD97706)
+val Amber500 = Color(0xFFF59E0B)
+val Amber400 = Color(0xFFFBBF24)
+val Amber300 = Color(0xFFFCD34D)
+val Amber100 = Color(0xFFFEF3C7)
+val Amber950 = Color(0xFF451A03)
 
-val CalmTextPrimaryDark = Color(0xFFE9F1F6)
-val CalmTextSecondaryDark = Color(0xFFA7BAC8)
-val CalmOutlineDark = Color(0xFF394C5C)
-val CalmOutlineVariantDark = Color(0xFF273744)
+val Rose700 = Color(0xFFBE123C)
+val Rose500 = Color(0xFFF43F5E)
+val Rose400 = Color(0xFFFB7185)
+val Rose300 = Color(0xFFFDA4AF)
 
-// Soft, Non-Stressful Quadrant Semantic Colors
-// Kuadran I: Penting & Mendesak (Soft Coral/Rose)
-val Q1AccentLight = Color(0xFFC45555)
-val Q1ContainerLight = Color(0xFFFDF0F0)
-val Q1BorderLight = Color(0xFFF3C8C8)
-val Q1AccentDark = Color(0xFFEF9A9A)
-val Q1ContainerDark = Color(0xFF341E21)
-val Q1BorderDark = Color(0xFF63373B)
+// Mindful Reflection Card Gradient Stops
+val ReflectionGradStartLight = Color(0xFFECFDF5)
+val ReflectionGradMidLight = Color(0xFFF0FDFA)
+val ReflectionGradEndLight = Color(0xFFF0F9FF)
 
-// Kuadran II: Penting & Tidak Mendesak (Sage Green / Teal)
-val Q2AccentLight = Color(0xFF447D61)
-val Q2ContainerLight = Color(0xFFEEF7F2)
-val Q2BorderLight = Color(0xFFBDDFCC)
-val Q2AccentDark = Color(0xFF8CC9A9)
-val Q2ContainerDark = Color(0xFF1A2F26)
-val Q2BorderDark = Color(0xFF315948)
+val ReflectionGradStartDark = Obsidian850
+val ReflectionGradMidDark = Color(0xFF122026)
+val ReflectionGradEndDark = Color(0xFF111C26)
 
-// Kuadran III: Tidak Penting & Mendesak (Soft Amber/Honey)
-val Q3AccentLight = Color(0xFFB37E24)
-val Q3ContainerLight = Color(0xFFFDF7E8)
-val Q3BorderLight = Color(0xFFF1DA9C)
-val Q3AccentDark = Color(0xFFE8C073)
-val Q3ContainerDark = Color(0xFF332A19)
-val Q3BorderDark = Color(0xFF63502B)
+// Quadrant Semantic Tokens (Matching HTML Redesign)
+// Q1: Penting & Mendesak (Rose)
+val Q1Dot = Rose500
+val Q1AccentLight = Rose700
+val Q1ContainerLight = Color(0xFFFFF1F2)
+val Q1BorderLight = Color(0xFFFDA4AF)
+val Q1AccentDark = Rose300
+val Q1ContainerDark = Color(0xFF1E1418)
+val Q1BorderDark = Rose500.copy(alpha = 0.25f)
 
-// Kuadran IV: Tidak Penting & Tidak Mendesak (Soft Slate Gray)
-val Q4AccentLight = Color(0xFF5C6F82)
-val Q4ContainerLight = Color(0xFFF1F5F8)
-val Q4BorderLight = Color(0xFFCFD9E2)
-val Q4AccentDark = Color(0xFFA0B3C5)
-val Q4ContainerDark = Color(0xFF1F2933)
-val Q4BorderDark = Color(0xFF3C4D5D)
+// Q2: Penting & Tidak Mendesak (Emerald)
+val Q2Dot = Emerald500
+val Q2AccentLight = Emerald700
+val Q2ContainerLight = Color(0xFFECFDF5)
+val Q2BorderLight = Color(0xFF6EE7B7)
+val Q2AccentDark = Emerald300
+val Q2ContainerDark = Color(0xFF111E1A)
+val Q2BorderDark = Emerald500.copy(alpha = 0.25f)
+
+// Q3: Tidak Penting & Mendesak (Amber)
+val Q3Dot = Amber500
+val Q3AccentLight = Amber700
+val Q3ContainerLight = Color(0xFFFFFBEB)
+val Q3BorderLight = Color(0xFFFCD34D)
+val Q3AccentDark = Amber300
+val Q3ContainerDark = Color(0xFF1E1A12)
+val Q3BorderDark = Amber500.copy(alpha = 0.25f)
+
+// Q4: Tidak Penting & Tidak Mendesak (Slate / Obsidian)
+val Q4Dot = Slate400
+val Q4AccentLight = Color(0xFF334155)
+val Q4ContainerLight = Slate100
+val Q4BorderLight = Slate300
+val Q4AccentDark = Slate300
+val Q4ContainerDark = Obsidian850
+val Q4BorderDark = Color.White.copy(alpha = 0.08f)
+
+// Schedule Sky Slot Tokens
+val SkySlotContainerLight = Color(0xFFF0F9FF)
+val SkySlotBorderLight = Color(0xFF7DD3FC)
+val SkySlotContainerDark = Color(0xFF111B24)
+val SkySlotBorderDark = Sky400.copy(alpha = 0.25f)
